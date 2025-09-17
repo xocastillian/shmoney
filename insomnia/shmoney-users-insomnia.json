@@ -1,0 +1,83 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-09-17T17:30:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2024.3.0",
+  "resources": [
+    {
+      "_id": "wrk_shmoney_users",
+      "_type": "workspace",
+      "name": "Shmoney Users API",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_shmoney_base",
+      "_type": "environment",
+      "parentId": "wrk_shmoney_users",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8080"
+      }
+    },
+    {
+      "_id": "req_create_user",
+      "_type": "request",
+      "parentId": "wrk_shmoney_users",
+      "name": "Create User",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/users",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Alice Example\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"P@ssw0rd123\",\n  \"role\": \"USER\",\n  \"subscriptionActive\": true\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_get_user_by_id",
+      "_type": "request",
+      "parentId": "wrk_shmoney_users",
+      "name": "Get User By Id",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/users/1"
+    },
+    {
+      "_id": "req_get_all_users",
+      "_type": "request",
+      "parentId": "wrk_shmoney_users",
+      "name": "List Users",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/users"
+    },
+    {
+      "_id": "req_update_user",
+      "_type": "request",
+      "parentId": "wrk_shmoney_users",
+      "name": "Update User",
+      "method": "PUT",
+      "url": "{{ _.baseUrl }}/api/users/1",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Alice Example\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"NewStrongP@ssw0rd\",\n  \"role\": \"ADMIN\",\n  \"subscriptionActive\": false,\n  \"lastLoginAt\": \"2025-09-17T14:00:00Z\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_delete_user",
+      "_type": "request",
+      "parentId": "wrk_shmoney_users",
+      "name": "Delete User",
+      "method": "DELETE",
+      "url": "{{ _.baseUrl }}/api/users/1"
+    }
+  ]
+}
