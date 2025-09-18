@@ -57,8 +57,8 @@
       "_id": "req_update_user",
       "_type": "request",
       "parentId": "wrk_shmoney_users",
-      "name": "Update User",
-      "method": "PUT",
+      "name": "Patch User",
+      "method": "PATCH",
       "url": "{{ _.baseUrl }}/api/users/1",
       "body": {
         "mimeType": "application/json",

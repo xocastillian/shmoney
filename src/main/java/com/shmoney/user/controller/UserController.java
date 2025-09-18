@@ -49,7 +49,7 @@ public class UserController {
                 .toList();
     }
     
-    @PutMapping("/{id}")
+    @PatchMapping("/{id}")
     public UserResponse update(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
         User existing = userService.getById(id);
         // DTO -> Entity
