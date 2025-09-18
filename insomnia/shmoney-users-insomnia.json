@@ -20,9 +20,75 @@
       }
     },
     {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_shmoney_users",
+      "name": "Auth"
+    },
+    {
+      "_id": "fld_users",
+      "_type": "request_group",
+      "parentId": "wrk_shmoney_users",
+      "name": "Users"
+    },
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"P@ssw0rd123\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_refresh",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Refresh Tokens",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/auth/refresh",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"<PASTE_REFRESH_TOKEN>\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_logout",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Logout",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/auth/logout",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"<PASTE_REFRESH_TOKEN>\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
       "_id": "req_create_user",
       "_type": "request",
-      "parentId": "wrk_shmoney_users",
+      "parentId": "fld_users",
       "name": "Create User",
       "method": "POST",
       "url": "{{ _.baseUrl }}/api/users",
@@ -40,23 +106,35 @@
     {
       "_id": "req_get_user_by_id",
       "_type": "request",
-      "parentId": "wrk_shmoney_users",
+      "parentId": "fld_users",
       "name": "Get User By Id",
       "method": "GET",
-      "url": "{{ _.baseUrl }}/api/users/1"
+      "url": "{{ _.baseUrl }}/api/users/1",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer <PASTE_ACCESS_TOKEN>"
+        }
+      ]
     },
     {
       "_id": "req_get_all_users",
       "_type": "request",
-      "parentId": "wrk_shmoney_users",
+      "parentId": "fld_users",
       "name": "List Users",
       "method": "GET",
-      "url": "{{ _.baseUrl }}/api/users"
+      "url": "{{ _.baseUrl }}/api/users",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer <PASTE_ACCESS_TOKEN>"
+        }
+      ]
     },
     {
       "_id": "req_update_user",
       "_type": "request",
-      "parentId": "wrk_shmoney_users",
+      "parentId": "fld_users",
       "name": "Patch User",
       "method": "PATCH",
       "url": "{{ _.baseUrl }}/api/users/1",
@@ -68,16 +146,26 @@
         {
           "name": "Content-Type",
           "value": "application/json"
+        },
+        {
+          "name": "Authorization",
+          "value": "Bearer <PASTE_ACCESS_TOKEN>"
         }
       ]
     },
     {
       "_id": "req_delete_user",
       "_type": "request",
-      "parentId": "wrk_shmoney_users",
+      "parentId": "fld_users",
       "name": "Delete User",
       "method": "DELETE",
-      "url": "{{ _.baseUrl }}/api/users/1"
+      "url": "{{ _.baseUrl }}/api/users/1",
+      "headers": [
+        {
+          "name": "Authorization",
+          "value": "Bearer <PASTE_ACCESS_TOKEN>"
+        }
+      ]
     }
   ]
 }

@@ -1,6 +1,7 @@
 package com.shmoney.user.service;
 
 import com.shmoney.user.entity.User;
+import com.shmoney.user.exception.UserNotFoundException;
 import com.shmoney.user.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
