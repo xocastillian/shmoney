@@ -1,14 +1,10 @@
 package com.shmoney.user.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import jakarta.persistence.Table;
+import com.shmoney.wallet.entity.Wallet;
+import jakarta.persistence.*;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -41,6 +37,9 @@ public class User {
 
     @Column(name = "last_login_at")
     private OffsetDateTime lastLoginAt;
+
+    @OneToMany(mappedBy = "owner", orphanRemoval = true)
+    private List<Wallet> wallets = new ArrayList<>();
 
     @PrePersist
     void onCreate() {
@@ -127,5 +126,12 @@ public class User {
     public void setLastLoginAt(OffsetDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
     }
-}
 
+    public List<Wallet> getWallets() {
+        return wallets;
+    }
+
+    public void setWallets(List<Wallet> wallets) {
+        this.wallets = wallets;
+    }
+}
