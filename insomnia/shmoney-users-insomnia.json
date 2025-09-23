@@ -1,13 +1,13 @@
 {
   "_type": "export",
   "__export_format": 4,
-  "__export_date": "2025-09-17T17:30:00.000Z",
+  "__export_date": "2025-09-23T16:27:17+00:00",
   "__export_source": "insomnia.desktop.app:v2024.3.0",
   "resources": [
     {
       "_id": "wrk_shmoney_users",
       "_type": "workspace",
-      "name": "Shmoney Users API",
+      "name": "Shmoney API",
       "scope": "collection"
     },
     {
@@ -20,9 +20,87 @@
       }
     },
     {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_shmoney_users",
+      "name": "Auth"
+    },
+    {
+      "_id": "fld_users",
+      "_type": "request_group",
+      "parentId": "wrk_shmoney_users",
+      "name": "Users"
+    },
+    {
+      "_id": "fld_wallets",
+      "_type": "request_group",
+      "parentId": "wrk_shmoney_users",
+      "name": "Wallets"
+    },
+    {
+      "_id": "fld_currencies",
+      "_type": "request_group",
+      "parentId": "wrk_shmoney_users",
+      "name": "Currencies"
+    },
+    {
+      "_id": "req_login",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/auth/login",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"xocas@gmail.com\",\n  \"password\": \"wazzap14\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_refresh",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Refresh Tokens",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/auth/refresh",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"{{ _.refreshToken }}\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_logout",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Logout",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/auth/logout",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"refreshToken\": \"{{ _.refreshToken }}\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
       "_id": "req_create_user",
       "_type": "request",
-      "parentId": "wrk_shmoney_users",
+      "parentId": "fld_users",
       "name": "Create User",
       "method": "POST",
       "url": "{{ _.baseUrl }}/api/users",
@@ -40,29 +118,41 @@
     {
       "_id": "req_get_user_by_id",
       "_type": "request",
-      "parentId": "wrk_shmoney_users",
+      "parentId": "fld_users",
       "name": "Get User By Id",
       "method": "GET",
-      "url": "{{ _.baseUrl }}/api/users/1"
+      "url": "{{ _.baseUrl }}/api/users/1",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
     },
     {
       "_id": "req_get_all_users",
       "_type": "request",
-      "parentId": "wrk_shmoney_users",
+      "parentId": "fld_users",
       "name": "List Users",
       "method": "GET",
-      "url": "{{ _.baseUrl }}/api/users"
+      "url": "{{ _.baseUrl }}/api/users",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
     },
     {
       "_id": "req_update_user",
       "_type": "request",
-      "parentId": "wrk_shmoney_users",
+      "parentId": "fld_users",
       "name": "Patch User",
       "method": "PATCH",
       "url": "{{ _.baseUrl }}/api/users/1",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"name\": \"Alice Example\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"NewStrongP@ssw0rd\",\n  \"role\": \"ADMIN\",\n  \"subscriptionActive\": false,\n  \"lastLoginAt\": \"2025-09-17T14:00:00Z\"\n}"
+        "text": "{\n  \"name\": \"Alice Example\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"NewStrongP@ssw0rd\",\n  \"role\": \"ADMIN\",\n  \"subscriptionActive\": false,\n  \"lastLoginAt\": \"2025-09-23T10:00:00Z\"\n}"
       },
       "headers": [
         {
@@ -74,10 +164,188 @@
     {
       "_id": "req_delete_user",
       "_type": "request",
-      "parentId": "wrk_shmoney_users",
+      "parentId": "fld_users",
       "name": "Delete User",
       "method": "DELETE",
-      "url": "{{ _.baseUrl }}/api/users/1"
+      "url": "{{ _.baseUrl }}/api/users/1",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_wallet_create",
+      "_type": "request",
+      "parentId": "fld_wallets",
+      "name": "Create Wallet",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/wallets",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Daily Expenses\",\n  \"currencyCode\": \"USD\",\n  \"ownerId\": 1\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_wallet_get",
+      "_type": "request",
+      "parentId": "fld_wallets",
+      "name": "Get Wallet By Id",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/wallets/1",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_wallet_list",
+      "_type": "request",
+      "parentId": "fld_wallets",
+      "name": "List Wallets",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/wallets",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_wallet_update",
+      "_type": "request",
+      "parentId": "fld_wallets",
+      "name": "Patch Wallet",
+      "method": "PATCH",
+      "url": "{{ _.baseUrl }}/api/wallets/1",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Shared Wallet\",\n  \"currencyCode\": \"EUR\",\n  \"ownerId\": 1\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_wallet_delete",
+      "_type": "request",
+      "parentId": "fld_wallets",
+      "name": "Delete Wallet",
+      "method": "DELETE",
+      "url": "{{ _.baseUrl }}/api/wallets/1",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_currencies_list",
+      "_type": "request",
+      "parentId": "fld_currencies",
+      "name": "List Active Currencies",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/currencies",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_exchange_rate_get",
+      "_type": "request",
+      "parentId": "fld_currencies",
+      "name": "Get Exchange Rate",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/exchange-rates?from=USD&to=KZT",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_exchange_rate_convert",
+      "_type": "request",
+      "parentId": "fld_currencies",
+      "name": "Convert Currency",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/exchange-rates/convert?from=USD&to=KZT&amount=100",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "fld_wallet_transactions",
+      "_type": "request_group",
+      "parentId": "wrk_shmoney_users",
+      "name": "Wallet Transactions"
+    },
+    {
+      "_id": "req_wallet_tx_create",
+      "_type": "request",
+      "parentId": "fld_wallet_transactions",
+      "name": "Create Wallet Transaction",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/wallet-transactions",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"fromWalletId\": 1,\n  \"toWalletId\": 2,\n  \"amount\": 100.00,\n  \"description\": \"Weekly transfer\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_wallet_tx_list_single",
+      "_type": "request",
+      "parentId": "fld_wallet_transactions",
+      "name": "List Wallet Transactions (single wallet)",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/wallet-transactions?walletId=1",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
+      "_id": "req_wallet_tx_list_all",
+      "_type": "request",
+      "parentId": "fld_wallet_transactions",
+      "name": "List Wallet Transactions (admin)",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/wallet-transactions",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
     }
   ]
 }
