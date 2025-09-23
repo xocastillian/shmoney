@@ -14,13 +14,17 @@ public class CurrentUserProvider {
     
     public Optional<AuthenticatedUser> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
         if (authentication == null || !authentication.isAuthenticated()) {
             return Optional.empty();
         }
+        
         Object principal = authentication.getPrincipal();
+        
         if (principal instanceof AuthenticatedUser authenticatedUser) {
             return Optional.of(authenticatedUser);
         }
+        
         return Optional.empty();
     }
     

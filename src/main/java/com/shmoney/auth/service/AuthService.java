@@ -30,6 +30,7 @@ public class AuthService {
     
     public AuthResponse login(AuthRequest request) {
         User user;
+        
         try {
             user = userService.getByEmail(request.email());
         } catch (UserNotFoundException ex) {
@@ -56,6 +57,7 @@ public class AuthService {
     @Transactional(readOnly = true)
     public AuthResponse refresh(RefreshRequest request) {
         Long userId;
+        
         try {
             userId = jwtTokenService.parseRefreshToken(request.refreshToken()).userId();
         } catch (InvalidTokenException ex) {
@@ -63,6 +65,7 @@ public class AuthService {
         }
         
         User user;
+        
         try {
             user = userService.getById(userId);
         } catch (UserNotFoundException ex) {
