@@ -23,10 +23,13 @@ public class ExchangeRateClient {
                               @Value("${currency.exchange-rate.api-key}") String apiKey) {
         this.baseUrl = baseUrl;
         this.apiKey = apiKey;
+        
         RestTemplateBuilder templateBuilder = restTemplateBuilder;
+        
         if (!baseUrl.contains("exchangerate.host")) {
             templateBuilder = templateBuilder.defaultHeader("apikey", apiKey);
         }
+        
         this.restTemplate = templateBuilder.build();
     }
     
@@ -34,34 +37,44 @@ public class ExchangeRateClient {
         if (!StringUtils.hasText(apiKey)) {
             throw new IllegalStateException("Exchange rate API key is not configured");
         }
+        
         UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromUriString(baseUrl)
                 .queryParam("base", baseCurrency)
                 .queryParam("symbols", String.join(",", symbols));
+        
         if (baseUrl.contains("exchangerate.host")) {
             uriBuilder.queryParam("access_key", apiKey);
         }
+        
         URI uri = uriBuilder
                 .build(true)
                 .toUri();
+        
         ResponseEntity<ExchangeRateResponse> response = restTemplate
                 .getForEntity(uri, ExchangeRateResponse.class);
+        
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new IllegalStateException("Failed to fetch exchange rates: HTTP " + response.getStatusCode());
         }
+        
         ExchangeRateResponse body = response.getBody();
+        
         if (body == null) {
             throw new IllegalStateException("Empty response from exchange rate service");
         }
+        
         if (!body.success()) {
             String errorDetails = body.error() != null ? body.error().info() : "Unknown error";
             throw new IllegalStateException("Exchange rate provider error: " + errorDetails);
         }
+        
         if (body.base() == null || body.rates() == null) {
             throw new IllegalStateException("Incomplete response from exchange rate service");
         }
+        
         return body;
     }
-
+    
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ExchangeRateResponse(
             boolean success,

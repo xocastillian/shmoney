@@ -41,6 +41,7 @@ public class JwtTokenService {
     public TokenPair generateTokenPair(User user) {
         GeneratedToken access = buildToken(user, TokenType.ACCESS, properties.accessTokenTtl());
         GeneratedToken refresh = buildToken(user, TokenType.REFRESH, properties.refreshTokenTtl());
+        
         return new TokenPair(
                 access.token(),
                 access.expiresAt(),
@@ -78,8 +79,8 @@ public class JwtTokenService {
         try {
             var claimsJws = parser.parseSignedClaims(token);
             var claims = claimsJws.getPayload();
-            
             String tokenType = claims.get(TOKEN_TYPE_CLAIM, String.class);
+            
             if (!Objects.equals(expectedType.claimValue(), tokenType)) {
                 throw new InvalidTokenException("Unexpected token type");
             }

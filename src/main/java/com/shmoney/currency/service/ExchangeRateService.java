@@ -47,20 +47,24 @@ public class ExchangeRateService {
         Objects.requireNonNull(targetCurrency, "targetCurrency");
         String from = sourceCurrency.toUpperCase();
         String to = targetCurrency.toUpperCase();
+        
         if (from.equals(to)) {
             return BigDecimal.ONE.setScale(RATE_SCALE, RoundingMode.HALF_UP);
         }
+        
         Currency source = currencyService.getActiveByCode(from);
         Currency target = currencyService.getActiveByCode(to);
         Currency pivot = currencyService.getActiveByCode(BASE_PIVOT_CODE);
         BigDecimal pivotToSource = resolvePivotRate(pivot, source);
         BigDecimal pivotToTarget = resolvePivotRate(pivot, target);
+        
         return pivotToTarget.divide(pivotToSource, RATE_SCALE, RoundingMode.HALF_UP);
     }
     
     public BigDecimal convert(BigDecimal amount, String sourceCurrency, String targetCurrency) {
         Objects.requireNonNull(amount, "amount");
         BigDecimal rate = getRate(sourceCurrency, targetCurrency);
+        
         return amount.multiply(rate).setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
     }
     
@@ -68,7 +72,9 @@ public class ExchangeRateService {
         if (pivot.getCode().equalsIgnoreCase(target.getCode())) {
             return BigDecimal.ONE.setScale(RATE_SCALE, RoundingMode.HALF_UP);
         }
+        
         OffsetDateTime threshold = OffsetDateTime.now().minus(RATE_TTL);
+        
         return exchangeRateRepository
                 .findTopByBaseCurrencyCodeIgnoreCaseAndTargetCurrencyCodeIgnoreCaseAndFetchedAtAfter(
                         pivot.getCode(),
@@ -90,27 +96,32 @@ public class ExchangeRateService {
         ExchangeRateClient.ExchangeRateResponse response = exchangeRateClient.fetchLatest(pivot.getCode(), symbols);
         OffsetDateTime fetchedAt = OffsetDateTime.now();
         BigDecimal result = null;
+        
         for (Map.Entry<String, BigDecimal> entry : response.rates().entrySet()) {
             String targetCode = entry.getKey().toUpperCase();
             Currency target = currencyByCode.get(targetCode);
-            if (target == null) {
-                continue;
-            }
+            
+            if (target == null) continue;
+            
             BigDecimal rateValue = entry.getValue().setScale(RATE_SCALE, RoundingMode.HALF_UP);
             ExchangeRate rate = new ExchangeRate();
+            
             rate.setBaseCurrency(pivot);
             rate.setTargetCurrency(target);
             rate.setRate(rateValue);
             rate.setFetchedAt(fetchedAt);
             rate.setSource(SOURCE_PROVIDER);
             exchangeRateRepository.save(rate);
+            
             if (targetCode.equals(requestedTargetCode.toUpperCase())) {
                 result = rateValue;
             }
         }
+        
         if (result == null) {
             throw new IllegalStateException("Requested currency " + requestedTargetCode + " not returned by provider");
         }
+        
         return result;
     }
 }

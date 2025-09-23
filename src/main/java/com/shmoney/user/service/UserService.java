@@ -24,6 +24,7 @@ public class UserService {
     public User create(User user) {
         user.setId(null);
         user.setPasswordHash(encodePassword(user.getPasswordHash()));
+        
         return userRepository.save(user);
     }
     
@@ -54,6 +55,7 @@ public class UserService {
         existing.setLastLoginAt(changes.getLastLoginAt());
         
         String newPassword = changes.getPasswordHash();
+        
         if (newPassword != null && !newPassword.isBlank()) {
             existing.setPasswordHash(passwordEncoder.encode(newPassword));
         }
@@ -65,6 +67,7 @@ public class UserService {
         if (!userRepository.existsById(id)) {
             throw new UserNotFoundException(id);
         }
+        
         userRepository.deleteById(id);
     }
     
@@ -72,6 +75,7 @@ public class UserService {
         if (rawPassword == null || rawPassword.isBlank()) {
             throw new IllegalArgumentException("Password must not be empty");
         }
+        
         return passwordEncoder.encode(rawPassword);
     }
 }

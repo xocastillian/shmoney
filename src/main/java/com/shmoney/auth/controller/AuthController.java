@@ -4,6 +4,8 @@ import com.shmoney.auth.dto.AuthRequest;
 import com.shmoney.auth.dto.AuthResponse;
 import com.shmoney.auth.dto.RefreshRequest;
 import com.shmoney.auth.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Auth")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -21,16 +24,19 @@ public class AuthController {
         this.authService = authService;
     }
     
+    @Operation(summary = "Вход")
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody AuthRequest request) {
         return authService.login(request);
     }
     
+    @Operation(summary = "Обновить токены")
     @PostMapping("/refresh")
     public AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
         return authService.refresh(request);
     }
     
+    @Operation(summary = "Выход")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest request) {
         authService.logout(request);

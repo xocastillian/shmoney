@@ -32,6 +32,7 @@ public class WalletService {
         wallet.setId(null);
         wallet.setOwner(resolveOwner(ownerId));
         wallet.setCurrency(resolveCurrency(currencyCode));
+        
         return walletRepository.save(wallet);
     }
     
@@ -53,26 +54,25 @@ public class WalletService {
     }
     
     public Wallet update(Wallet wallet, Long ownerId, String currencyCode) {
-        if (ownerId != null) {
-            wallet.setOwner(resolveOwner(ownerId));
-        }
+        if (ownerId != null) wallet.setOwner(resolveOwner(ownerId));
+        
         if (currencyCode != null && !currencyCode.isBlank()) {
             wallet.setCurrency(resolveCurrency(currencyCode));
         }
+        
         return walletRepository.save(wallet);
     }
     
     public void delete(Long id) {
-        if (!walletRepository.existsById(id)) {
-            throw new WalletNotFoundException(id);
-        }
+        if (!walletRepository.existsById(id)) throw new WalletNotFoundException(id);
+        
         walletRepository.deleteById(id);
     }
     
     private User resolveOwner(Long ownerId) {
         return userService.getById(ownerId);
     }
-
+    
     private Currency resolveCurrency(String code) {
         return currencyService.getActiveByCode(code.trim());
     }
