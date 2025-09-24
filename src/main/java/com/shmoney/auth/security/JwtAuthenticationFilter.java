@@ -59,7 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
     
     private void setAuthentication(User user, String token) {
-        AuthenticatedUser principal = new AuthenticatedUser(user.getId(), user.getEmail(), user.getRole());
+        AuthenticatedUser principal = new AuthenticatedUser(user.getId(), user.getTelegramUsername(), user.getRole());
         List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
         var authentication = new UsernamePasswordAuthenticationToken(principal, token, authorities);
         SecurityContextHolder.getContext().setAuthentication(authentication);

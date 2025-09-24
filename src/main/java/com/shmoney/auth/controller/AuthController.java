@@ -1,13 +1,13 @@
 package com.shmoney.auth.controller;
 
-import com.shmoney.auth.dto.AuthRequest;
 import com.shmoney.auth.dto.AuthResponse;
 import com.shmoney.auth.dto.RefreshRequest;
+import com.shmoney.auth.dto.TelegramAuthRequest;
 import com.shmoney.auth.service.AuthService;
+import com.shmoney.auth.service.TelegramAuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,15 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     
     private final AuthService authService;
+    private final TelegramAuthService telegramAuthService;
     
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, TelegramAuthService telegramAuthService) {
         this.authService = authService;
-    }
-    
-    @Operation(summary = "Вход")
-    @PostMapping("/login")
-    public AuthResponse login(@Valid @RequestBody AuthRequest request) {
-        return authService.login(request);
+        this.telegramAuthService = telegramAuthService;
     }
     
     @Operation(summary = "Обновить токены")
@@ -36,10 +32,9 @@ public class AuthController {
         return authService.refresh(request);
     }
     
-    @Operation(summary = "Выход")
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshRequest request) {
-        authService.logout(request);
-        return ResponseEntity.noContent().build();
+    @Operation(summary = "Авторизация через Telegram Web App")
+    @PostMapping("/telegram")
+    public AuthResponse telegramLogin(@Valid @RequestBody TelegramAuthRequest request) {
+        return telegramAuthService.authenticate(request);
     }
 }

@@ -14,14 +14,14 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String name;
+    @Column(name = "telegram_user_id", nullable = false, unique = true)
+    private Long telegramUserId;
 
-    @Column(nullable = false, unique = true)
-    private String email;
+    @Column(name = "telegram_username", nullable = false)
+    private String telegramUsername;
 
-    @Column(name = "password_hash", nullable = false)
-    private String passwordHash;
+    @Column(name = "telegram_language_code")
+    private String telegramLanguageCode;
 
     @Column(nullable = false)
     private String role;
@@ -34,9 +34,6 @@ public class User {
 
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
-
-    @Column(name = "last_login_at")
-    private OffsetDateTime lastLoginAt;
 
     @OneToMany(mappedBy = "owner", orphanRemoval = true)
     private List<Wallet> wallets = new ArrayList<>();
@@ -63,28 +60,28 @@ public class User {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public Long getTelegramUserId() {
+        return telegramUserId;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTelegramUserId(Long telegramUserId) {
+        this.telegramUserId = telegramUserId;
     }
 
-    public String getEmail() {
-        return email;
+    public String getTelegramUsername() {
+        return telegramUsername;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setTelegramUsername(String telegramUsername) {
+        this.telegramUsername = telegramUsername;
     }
 
-    public String getPasswordHash() {
-        return passwordHash;
+    public String getTelegramLanguageCode() {
+        return telegramLanguageCode;
     }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+    public void setTelegramLanguageCode(String telegramLanguageCode) {
+        this.telegramLanguageCode = telegramLanguageCode;
     }
 
     public String getRole() {
@@ -117,14 +114,6 @@ public class User {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public OffsetDateTime getLastLoginAt() {
-        return lastLoginAt;
-    }
-
-    public void setLastLoginAt(OffsetDateTime lastLoginAt) {
-        this.lastLoginAt = lastLoginAt;
     }
 
     public List<Wallet> getWallets() {

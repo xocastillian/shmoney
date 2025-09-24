@@ -2,7 +2,6 @@ package com.shmoney.user.controller;
 
 import com.shmoney.auth.security.AuthenticatedUser;
 import com.shmoney.auth.security.CurrentUserProvider;
-import com.shmoney.user.dto.UserCreateRequest;
 import com.shmoney.user.dto.UserMapper;
 import com.shmoney.user.dto.UserResponse;
 import com.shmoney.user.dto.UserUpdateRequest;
@@ -16,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.util.List;
 
 @Tag(name = "Users")
@@ -33,18 +31,6 @@ public class UserController {
         this.userService = userService;
         this.userMapper = userMapper;
         this.currentUserProvider = currentUserProvider;
-    }
-    
-    @Operation(summary = "Создать пользователя")
-    @PostMapping
-    public ResponseEntity<UserResponse> create(@Valid @RequestBody UserCreateRequest request) {
-        User user = userMapper.toEntity(request);
-        User created = userService.create(user);
-        UserResponse response = userMapper.toResponse(created);
-        
-        return ResponseEntity
-                .created(URI.create("/api/users/" + response.id()))
-                .body(response);
     }
     
     @Operation(summary = "Получить пользователя по id")
@@ -66,11 +52,20 @@ public class UserController {
     @Operation(summary = "Обновить пользователя по id")
     @PatchMapping("/{id}")
     public UserResponse update(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
-        ensureCanAccessUser(id);
+        AuthenticatedUser current = currentUserProvider.requireCurrentUser();
+        ensureCanAccessUser(id, current);
         User existing = userService.getById(id);
+        String originalRole = existing.getRole();
+        boolean originalSubscription = existing.isSubscriptionActive();
         userMapper.updateEntity(request, existing);
-        User updated = userService.update(existing, existing);
-        
+
+        if (!currentUserProvider.isAdmin(current)) {
+            existing.setRole(originalRole);
+            existing.setSubscriptionActive(originalSubscription);
+        }
+
+        User updated = userService.update(existing);
+
         return userMapper.toResponse(updated);
     }
     
@@ -85,6 +80,10 @@ public class UserController {
     
     private void ensureCanAccessUser(Long id) {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
+        ensureCanAccessUser(id, current);
+    }
+
+    private void ensureCanAccessUser(Long id, AuthenticatedUser current) {
         boolean isOwner = current.id().equals(id);
         
         if (!isOwner && !currentUserProvider.isAdmin(current)) {

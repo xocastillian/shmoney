@@ -6,13 +6,13 @@ import java.util.List;
 
 public record UserResponse(
     Long id,
-    String name,
-    String email,
+    Long telegramUserId,
+    String telegramUsername,
+    String telegramLanguageCode,
     String role,
     boolean subscriptionActive,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt,
-    OffsetDateTime lastLoginAt,
     List<WalletResponse> wallets
 ) {
 }
