@@ -26,6 +26,24 @@
       "name": "Auth"
     },
     {
+      "_id": "req_telegram_auth",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Telegram Auth",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/auth/telegram",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \\\"initData\\\": \\\"<paste initData from Telegram here>\\\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ]
+    },
+    {
       "_id": "fld_users",
       "_type": "request_group",
       "parentId": "wrk_shmoney_users",
@@ -42,24 +60,6 @@
       "_type": "request_group",
       "parentId": "wrk_shmoney_users",
       "name": "Currencies"
-    },
-    {
-      "_id": "req_login",
-      "_type": "request",
-      "parentId": "fld_auth",
-      "name": "Login",
-      "method": "POST",
-      "url": "{{ _.baseUrl }}/api/auth/login",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"email\": \"xocas@gmail.com\",\n  \"password\": \"wazzap14\"\n}"
-      },
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ]
     },
     {
       "_id": "req_refresh",
@@ -89,24 +89,6 @@
       "body": {
         "mimeType": "application/json",
         "text": "{\n  \"refreshToken\": \"{{ _.refreshToken }}\"\n}"
-      },
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ]
-    },
-    {
-      "_id": "req_create_user",
-      "_type": "request",
-      "parentId": "fld_users",
-      "name": "Create User",
-      "method": "POST",
-      "url": "{{ _.baseUrl }}/api/users",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"name\": \"Alice Example\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"P@ssw0rd123\",\n  \"role\": \"USER\",\n  \"subscriptionActive\": true\n}"
       },
       "headers": [
         {
@@ -152,7 +134,7 @@
       "url": "{{ _.baseUrl }}/api/users/1",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"name\": \"Alice Example\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"NewStrongP@ssw0rd\",\n  \"role\": \"ADMIN\",\n  \"subscriptionActive\": false,\n  \"lastLoginAt\": \"2025-09-23T10:00:00Z\"\n}"
+        "text": "{\n  \\\"role\\\": \\\"ADMIN\\\",\n  \\\"subscriptionActive\\\": false\n}"
       },
       "headers": [
         {

@@ -1,11 +1,12 @@
 package com.shmoney.user.service;
 
+import com.shmoney.user.dto.TelegramUserData;
 import com.shmoney.user.entity.User;
 import com.shmoney.user.exception.UserNotFoundException;
 import com.shmoney.user.repository.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -14,18 +15,9 @@ import java.util.List;
 public class UserService {
     
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-    
-    public User create(User user) {
-        user.setId(null);
-        user.setPasswordHash(encodePassword(user.getPasswordHash()));
-        
-        return userRepository.save(user);
     }
     
     @Transactional(readOnly = true)
@@ -36,31 +28,22 @@ public class UserService {
     }
     
     @Transactional(readOnly = true)
-    public User getByEmail(String email) {
-        return userRepository
-                .findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException(email));
-    }
-    
-    @Transactional(readOnly = true)
     public List<User> getAll() {
         return userRepository.findAll();
     }
     
-    public User update(User existing, User changes) {
-        existing.setName(changes.getName());
-        existing.setEmail(changes.getEmail());
-        existing.setRole(changes.getRole());
-        existing.setSubscriptionActive(changes.isSubscriptionActive());
-        existing.setLastLoginAt(changes.getLastLoginAt());
-        
-        String newPassword = changes.getPasswordHash();
-        
-        if (newPassword != null && !newPassword.isBlank()) {
-            existing.setPasswordHash(passwordEncoder.encode(newPassword));
+    public User syncTelegramUser(TelegramUserData data, String defaultRole) {
+        if (data == null || data.id() == null) {
+            throw new IllegalArgumentException("Telegram user data is incomplete");
         }
         
-        return userRepository.save(existing);
+        return userRepository.findByTelegramUserId(data.id())
+                .map(existing -> updateTelegramUser(existing, data, defaultRole))
+                .orElseGet(() -> createTelegramUser(data, defaultRole));
+    }
+    
+    public User update(User user) {
+        return userRepository.save(user);
     }
     
     public void delete(Long id) {
@@ -71,11 +54,55 @@ public class UserService {
         userRepository.deleteById(id);
     }
     
-    private String encodePassword(String rawPassword) {
-        if (rawPassword == null || rawPassword.isBlank()) {
-            throw new IllegalArgumentException("Password must not be empty");
+    private User createTelegramUser(TelegramUserData data, String defaultRole) {
+        User user = new User();
+        user.setTelegramUserId(data.id());
+        user.setTelegramUsername(resolveTelegramUsername(data));
+        user.setTelegramLanguageCode(data.languageCode());
+        user.setRole(resolveTelegramRole(defaultRole));
+        user.setSubscriptionActive(false);
+        
+        return userRepository.save(user);
+    }
+    
+    private User updateTelegramUser(User existing, TelegramUserData data, String defaultRole) {
+        existing.setTelegramUsername(resolveTelegramUsername(data));
+        existing.setTelegramLanguageCode(data.languageCode());
+        
+        if (!StringUtils.hasText(existing.getRole())) {
+            existing.setRole(resolveTelegramRole(defaultRole));
         }
         
-        return passwordEncoder.encode(rawPassword);
+        return userRepository.save(existing);
+    }
+    
+    private String resolveTelegramUsername(TelegramUserData data) {
+        if (StringUtils.hasText(data.username())) {
+            return data.username().trim();
+        }
+        
+        StringBuilder fallback = new StringBuilder();
+        
+        if (StringUtils.hasText(data.firstName())) {
+            fallback.append(data.firstName().trim());
+        }
+        
+        if (StringUtils.hasText(data.lastName())) {
+            if (fallback.length() > 0) fallback.append('.');
+            
+            fallback.append(data.lastName().trim());
+        }
+        
+        if (fallback.length() == 0) fallback.append("user");
+        
+        fallback.append('.').append(data.id());
+        
+        return fallback.toString().replaceAll("\\s+", "_");
+    }
+    
+    private String resolveTelegramRole(String configuredRole) {
+        String role = StringUtils.hasText(configuredRole) ? configuredRole.trim() : "USER";
+        
+        return role.toUpperCase();
     }
 }

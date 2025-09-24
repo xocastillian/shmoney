@@ -1,6 +1,0 @@
-ALTER TABLE wallets
-    ADD COLUMN IF NOT EXISTS balance NUMERIC(18, 2) NOT NULL DEFAULT 0;
-
-UPDATE wallets
-SET balance = 0
-WHERE balance IS NULL;
