@@ -150,8 +150,8 @@ public class TelegramAuthService {
     
     private byte[] webAppSecretKey(String botToken) {
         return hmacSHA256(
-                botToken.getBytes(StandardCharsets.UTF_8),
-                WEBAPP_DATA.getBytes(StandardCharsets.UTF_8)
+                WEBAPP_DATA.getBytes(StandardCharsets.UTF_8),
+                botToken.getBytes(StandardCharsets.UTF_8)
         );
     }
     
