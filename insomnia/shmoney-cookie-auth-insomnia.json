@@ -1,0 +1,187 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-10-01T00:00:00.000Z",
+  "__export_source": "generated-by-codex",
+  "resources": [
+    {
+      "_id": "wrk_shmoney_cookie",
+      "_type": "workspace",
+      "name": "Shmoney API (Cookie Auth)",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_shmoney_cookie_base",
+      "_type": "environment",
+      "parentId": "wrk_shmoney_cookie",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8080"
+      }
+    },
+    {
+      "_id": "jar_shmoney_cookie",
+      "_type": "cookie_jar",
+      "parentId": "wrk_shmoney_cookie",
+      "name": "Default Jar",
+      "cookies": []
+    },
+    { "_id": "fld_auth_cookie", "_type": "request_group", "parentId": "wrk_shmoney_cookie", "name": "Auth" },
+    { "_id": "fld_users_cookie", "_type": "request_group", "parentId": "wrk_shmoney_cookie", "name": "Users" },
+    { "_id": "fld_wallets_cookie", "_type": "request_group", "parentId": "wrk_shmoney_cookie", "name": "Wallets" },
+    { "_id": "fld_tx_cookie", "_type": "request_group", "parentId": "wrk_shmoney_cookie", "name": "Wallet Transactions" },
+    { "_id": "fld_curr_cookie", "_type": "request_group", "parentId": "wrk_shmoney_cookie", "name": "Currencies & Rates" },
+
+    {
+      "_id": "req_telegram_auth_cookie",
+      "_type": "request",
+      "parentId": "fld_auth_cookie",
+      "name": "Telegram Auth (sets cookies)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/auth/telegram",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"initData\": \"<paste initData here>\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    },
+
+    {
+      "_id": "req_refresh_cookie",
+      "_type": "request",
+      "parentId": "fld_auth_cookie",
+      "name": "Refresh Tokens (cookies)",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/auth/refresh",
+      "body": { "mimeType": "application/json", "text": "{}" },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    },
+
+    {
+      "_id": "req_users_me_by_id_cookie",
+      "_type": "request",
+      "parentId": "fld_users_cookie",
+      "name": "Get User By Id",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/users/1",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    },
+    {
+      "_id": "req_users_list_cookie",
+      "_type": "request",
+      "parentId": "fld_users_cookie",
+      "name": "List Users (ADMIN)",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/users",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    },
+
+    {
+      "_id": "req_wallets_create_cookie",
+      "_type": "request",
+      "parentId": "fld_wallets_cookie",
+      "name": "Create Wallet",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/wallets",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Daily\",\n  \"currencyCode\": \"USD\",\n  \"ownerId\": 1\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    },
+    {
+      "_id": "req_wallets_get_cookie",
+      "_type": "request",
+      "parentId": "fld_wallets_cookie",
+      "name": "Get Wallet By Id",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/wallets/1",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    },
+    {
+      "_id": "req_wallets_list_cookie",
+      "_type": "request",
+      "parentId": "fld_wallets_cookie",
+      "name": "List Wallets",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/wallets",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    },
+
+    {
+      "_id": "req_tx_create_cookie",
+      "_type": "request",
+      "parentId": "fld_tx_cookie",
+      "name": "Create Wallet Transaction",
+      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/wallet-transactions",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"fromWalletId\": 1,\n  \"toWalletId\": 2,\n  \"amount\": 10.50,\n  \"description\": \"Test\"\n}"
+      },
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    },
+    {
+      "_id": "req_tx_list_by_wallet_cookie",
+      "_type": "request",
+      "parentId": "fld_tx_cookie",
+      "name": "List Transactions (by wallet)",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/wallet-transactions?walletId=1",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    },
+
+    {
+      "_id": "req_currency_list_cookie",
+      "_type": "request",
+      "parentId": "fld_curr_cookie",
+      "name": "List Active Currencies",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/currencies",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    },
+    {
+      "_id": "req_rate_get_cookie",
+      "_type": "request",
+      "parentId": "fld_curr_cookie",
+      "name": "Get Exchange Rate",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/exchange-rates?from=USD&to=KZT",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    },
+    {
+      "_id": "req_rate_convert_cookie",
+      "_type": "request",
+      "parentId": "fld_curr_cookie",
+      "name": "Convert Currency",
+      "method": "GET",
+      "url": "{{ _.baseUrl }}/api/exchange-rates/convert?from=USD&to=KZT&amount=100",
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "settingStoreCookies": true,
+      "settingSendCookies": true
+    }
+  ]
+}
+
