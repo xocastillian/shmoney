@@ -46,6 +46,15 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         }
     }
     
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String uri = request.getRequestURI();
+        
+        if (uri.startsWith("/v3")) return true;
+        
+        return uri.startsWith("/swagger") || uri.startsWith("/swagger-ui");
+    }
+    
     private String bodySnippet(byte[] bytes, int max) {
         if (bytes == null || bytes.length == 0) return "";
         String s = new String(bytes, StandardCharsets.UTF_8);
@@ -53,4 +62,3 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         return s;
     }
 }
-

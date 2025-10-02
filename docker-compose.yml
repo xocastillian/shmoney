@@ -9,13 +9,81 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       TZ: Europe/Moscow
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "127.0.0.1:${POSTGRES_PORT}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  app:
+    build:
+      context: .
+    image: shmoney:latest
+    container_name: shmoney-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      JWT_SECRET: ${JWT_SECRET}
+      EXCHANGE_RATE_API_KEY: ${EXCHANGE_RATE_API_KEY}
+      EXCHANGE_RATE_BASE_URL: ${EXCHANGE_RATE_BASE_URL}
+
+      TELEGRAM_ENABLED: ${TELEGRAM_ENABLED}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+
+      SECURITY_COOKIES_SAME_SITE: ${SECURITY_COOKIES_SAME_SITE}
+      SECURITY_COOKIES_SECURE: ${SECURITY_COOKIES_SECURE}
+      SECURITY_COOKIES_DOMAIN: ${SECURITY_COOKIES_DOMAIN}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+    ports:
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: shmoney-nginx
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_started
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/templates:/etc/nginx/templates:ro
+      - certbot-webroot:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: shmoney-certbot
+    profiles: ["cert"]
+    volumes:
+      - certbot-webroot:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+    entrypoint: ["/bin/sh","-c"]
+    command: >
+      "if [ -z \"${API_DOMAIN}\" ] || [ -z \"${LETSENCRYPT_EMAIL}\" ]; then
+         echo 'Set API_DOMAIN and LETSENCRYPT_EMAIL in .env before requesting a certificate' && exit 1;
+       fi && 
+       certbot certonly --webroot -w /var/www/certbot \
+         -d ${API_DOMAIN} --email ${LETSENCRYPT_EMAIL} --agree-tos --no-eff-email"
+
 volumes:
   postgres-data:
+  certbot-webroot:
+  letsencrypt:

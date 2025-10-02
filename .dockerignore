@@ -1,0 +1,13 @@
+.git
+.gitignore
+.gitattributes
+.idea
+.mvn
+mvnw
+mvnw.cmd
+
+target
+
+.DS_Store
+
+.env

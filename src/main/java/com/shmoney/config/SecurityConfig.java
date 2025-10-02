@@ -34,7 +34,9 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/v3/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger", "/swagger/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/health", "/error").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
                         .anyRequest().authenticated()
@@ -48,10 +50,15 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
         CorsConfiguration config = new CorsConfiguration();
         
-        config.addAllowedOriginPattern("*");
+        if (corsProperties.allowedOrigins() != null && !corsProperties.allowedOrigins().isEmpty()) {
+            corsProperties.allowedOrigins().forEach(config::addAllowedOriginPattern);
+        } else {
+            config.addAllowedOriginPattern("*");
+        }
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
-        config.setAllowCredentials(true);
+        
+        config.setAllowCredentials(corsProperties.allowCredentials());
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

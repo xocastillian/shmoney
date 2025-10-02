@@ -72,4 +72,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         var authentication = new UsernamePasswordAuthenticationToken(principal, token, authorities);
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
+    
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        
+        if (uri.startsWith("/v3/") || uri.startsWith("/swagger-ui") || uri.startsWith("/swagger")) return true;
+        if ("/actuator/health".equals(uri)) return true;
+        if (uri.startsWith("/api/auth/")) return true;
+        
+        return "OPTIONS".equalsIgnoreCase(request.getMethod());
+    }
 }
