@@ -60,11 +60,13 @@ services:
         condition: service_started
     environment:
       API_DOMAIN: ${API_DOMAIN}
+      FRONT_DOMAIN: ${FRONT_DOMAIN}
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./deploy/nginx/templates:/etc/nginx/templates:ro
+      - ./web-dist:/usr/share/nginx/html:ro
       - certbot-webroot:/var/www/certbot
       - letsencrypt:/etc/letsencrypt
 
@@ -104,8 +106,9 @@ services:
       "if [ -z \"${API_DOMAIN}\" ] || [ -z \"${LETSENCRYPT_EMAIL}\" ]; then
          echo 'Set API_DOMAIN and LETSENCRYPT_EMAIL in .env before requesting a certificate' && exit 1;
        fi && 
-       certbot certonly --webroot -w /var/www/certbot \
-         -d ${API_DOMAIN} --email ${LETSENCRYPT_EMAIL} --agree-tos --no-eff-email"
+       DOMAINS="-d ${API_DOMAIN}" && \
+       if [ -n \"${FRONT_DOMAIN}\" ]; then DOMAINS=\"$DOMAINS -d ${FRONT_DOMAIN}\"; fi && \
+       certbot certonly --webroot -w /var/www/certbot $DOMAINS --email ${LETSENCRYPT_EMAIL} --agree-tos --no-eff-email"
 
   # Simple, non-interactive self-signed cert generator for local dev
   gencert:
