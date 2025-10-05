@@ -56,10 +56,36 @@ public class TelegramAuthService {
     }
     
     public AuthResponse authenticate(TelegramAuthRequest request) {
-        String botToken = ensureEnabled();
-        InitData initData = parseInitData(request.initData());
+        if (!properties.enabled()) {
+            throw new TelegramAuthenticationException("Авторизация через Telegram отключена");
+        }
         
-        validateSignature(initData, botToken);
+        InitData initData = parseInitData(request.initData());
+        String tokensRaw = properties.botToken();
+        
+        if (!StringUtils.hasText(tokensRaw)) {
+            throw new TelegramAuthenticationException("Не указан токен Telegram-бота");
+        }
+        
+        String matchedToken = null;
+        
+        for (String candidate : tokensRaw.split(",")) {
+            String token = candidate == null ? null : candidate.trim();
+            
+            if (!StringUtils.hasText(token)) continue;
+            
+            try {
+                validateSignature(initData, token);
+                matchedToken = token;
+                break;
+            } catch (TelegramAuthenticationException ex) {
+            }
+        }
+        
+        if (matchedToken == null) {
+            throw new TelegramAuthenticationException("Неверная сигнатура initData");
+        }
+        
         ensureNotExpired(initData.values().get(AUTH_DATE_FIELD));
         
         TelegramUserPayload payload = parseUserPayload(initData.values().get(USER_FIELD));
