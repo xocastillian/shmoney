@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 
 public record JwtTokenDetails(
         Long userId,
-        String email,
+        String displayName,
         String role,
         OffsetDateTime expiresAt
 ) {

@@ -9,6 +9,9 @@ import com.shmoney.wallet.transaction.dto.WalletTransactionRequest;
 import com.shmoney.wallet.transaction.dto.WalletTransactionResponse;
 import com.shmoney.wallet.transaction.entity.WalletTransaction;
 import com.shmoney.wallet.transaction.service.WalletTransactionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,15 +20,17 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Wallet Transactions")
+@SecurityRequirement(name = "bearer-jwt")
 @RestController
 @RequestMapping("/api/wallet-transactions")
 public class WalletTransactionController {
-
+    
     private final WalletTransactionService walletTransactionService;
     private final WalletService walletService;
     private final WalletTransactionMapper walletTransactionMapper;
     private final CurrentUserProvider currentUserProvider;
-
+    
     public WalletTransactionController(WalletTransactionService walletTransactionService,
                                        WalletService walletService,
                                        WalletTransactionMapper walletTransactionMapper,
@@ -35,30 +40,32 @@ public class WalletTransactionController {
         this.walletTransactionMapper = walletTransactionMapper;
         this.currentUserProvider = currentUserProvider;
     }
-
+    
+    @Operation(summary = "Создать транзакцию между кошельками")
     @PostMapping
     public ResponseEntity<WalletTransactionResponse> create(@Valid @RequestBody WalletTransactionRequest request) {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
         Wallet fromWallet = walletService.getById(request.fromWalletId());
         Wallet toWallet = walletService.getById(request.toWalletId());
         ensureCanTransfer(current, fromWallet, toWallet);
-
+        
         WalletTransaction transaction = walletTransactionService.create(
                 fromWallet,
                 toWallet,
                 request.amount(),
                 request.executedAt(),
                 request.description());
-
+        
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(walletTransactionMapper.toResponse(transaction));
     }
-
+    
+    @Operation(summary = "Получить список транзакций (все для ADMIN, либо по кошельку)")
     @GetMapping
     public List<WalletTransactionResponse> getTransactions(@RequestParam(required = false) Long walletId) {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
         List<WalletTransaction> transactions;
-
+        
         if (walletId == null) {
             ensureAdmin(current);
             transactions = walletTransactionService.getAll();
@@ -67,31 +74,31 @@ public class WalletTransactionController {
             ensureCanAccess(current, wallet);
             transactions = walletTransactionService.getByWallet(walletId);
         }
-
+        
         return transactions.stream()
                 .map(walletTransactionMapper::toResponse)
                 .toList();
     }
-
+    
     private void ensureCanTransfer(AuthenticatedUser current, Wallet fromWallet, Wallet toWallet) {
         boolean isAdmin = currentUserProvider.isAdmin(current);
+        
         if (!isAdmin && !fromWallet.getOwner().getId().equals(current.id())) {
             throw new AccessDeniedException("Forbidden");
         }
+        
         if (!isAdmin && !toWallet.getOwner().getId().equals(current.id())) {
             throw new AccessDeniedException("Forbidden");
         }
     }
-
+    
     private void ensureCanAccess(AuthenticatedUser current, Wallet wallet) {
         if (!wallet.getOwner().getId().equals(current.id()) && !currentUserProvider.isAdmin(current)) {
             throw new AccessDeniedException("Forbidden");
         }
     }
-
+    
     private void ensureAdmin(AuthenticatedUser current) {
-        if (!currentUserProvider.isAdmin(current)) {
-            throw new AccessDeniedException("Forbidden");
-        }
+        if (!currentUserProvider.isAdmin(current)) throw new AccessDeniedException("Forbidden");
     }
 }

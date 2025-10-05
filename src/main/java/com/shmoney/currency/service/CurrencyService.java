@@ -24,9 +24,11 @@ public class CurrencyService {
     
     public Currency getActiveByCode(String code) {
         Currency currency = getByCode(code);
+        
         if (!currency.isActive()) {
             throw new CurrencyNotFoundException(code);
         }
+        
         return currency;
     }
     

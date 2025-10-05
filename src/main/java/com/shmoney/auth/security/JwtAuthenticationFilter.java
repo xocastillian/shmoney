@@ -27,22 +27,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     private final JwtTokenService jwtTokenService;
     private final UserService userService;
+    private final TokenCookieService tokenCookieService;
     
-    public JwtAuthenticationFilter(JwtTokenService jwtTokenService, UserService userService) {
+    public JwtAuthenticationFilter(JwtTokenService jwtTokenService, UserService userService,
+                                   TokenCookieService tokenCookieService) {
         this.jwtTokenService = jwtTokenService;
         this.userService = userService;
+        this.tokenCookieService = tokenCookieService;
     }
     
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (!StringUtils.hasText(header) || !header.startsWith(BEARER_PREFIX)) {
+        String token = null;
+        
+        if (StringUtils.hasText(header) && header.startsWith(BEARER_PREFIX)) {
+            token = header.substring(BEARER_PREFIX.length());
+        } else {
+            token = tokenCookieService.readAccessToken(request).orElse(null);
+        }
+        
+        if (!StringUtils.hasText(token)) {
             filterChain.doFilter(request, response);
             return;
         }
-        
-        String token = header.substring(BEARER_PREFIX.length());
         
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
@@ -58,9 +67,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
     
     private void setAuthentication(User user, String token) {
-        AuthenticatedUser principal = new AuthenticatedUser(user.getId(), user.getEmail(), user.getRole());
+        AuthenticatedUser principal = new AuthenticatedUser(user.getId(), user.getTelegramUsername(), user.getRole());
         List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()));
         var authentication = new UsernamePasswordAuthenticationToken(principal, token, authorities);
         SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+    
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        
+        if (uri.startsWith("/v3/") || uri.startsWith("/swagger-ui") || uri.startsWith("/swagger")) return true;
+        if ("/actuator/health".equals(uri)) return true;
+        if (uri.startsWith("/api/auth/")) return true;
+        
+        return "OPTIONS".equalsIgnoreCase(request.getMethod());
     }
 }
