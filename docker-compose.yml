@@ -68,6 +68,30 @@ services:
       - certbot-webroot:/var/www/certbot
       - letsencrypt:/etc/letsencrypt
 
+  # Dev-only helper to bootstrap a self-signed cert into the shared volume
+  gen-selfsigned:
+    image: alpine:3.20
+    profiles: ["dev"]
+    depends_on: []
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+    entrypoint: ["/bin/sh","-c"]
+    command: >
+      "set -e; \
+       if [ -z \"${API_DOMAIN}\" ]; then echo 'API_DOMAIN not set'; exit 1; fi; \
+       if [ -f /etc/letsencrypt/live/${API_DOMAIN}/fullchain.pem ] && [ -f /etc/letsencrypt/live/${API_DOMAIN}/privkey.pem ]; then \
+         echo 'Certs already exist, skipping'; exit 0; \
+       fi; \
+       echo 'Installing openssl and generating self-signed cert...'; \
+       apk add --no-cache openssl >/dev/null && \
+       mkdir -p /etc/letsencrypt/live/${API_DOMAIN} && \
+       openssl req -x509 -nodes -newkey rsa:2048 -days 5 -sha256 -batch \
+         -keyout /etc/letsencrypt/live/${API_DOMAIN}/privkey.pem \
+         -out /etc/letsencrypt/live/${API_DOMAIN}/fullchain.pem \
+         -subj "/C=RU/ST=./L=./O=Local Dev/CN=${API_DOMAIN}" \
+         -addext "subjectAltName=DNS:${API_DOMAIN}" && \
+       echo 'Self-signed cert generated.'"
+
   certbot:
     image: certbot/certbot:latest
     container_name: shmoney-certbot
@@ -82,6 +106,27 @@ services:
        fi && 
        certbot certonly --webroot -w /var/www/certbot \
          -d ${API_DOMAIN} --email ${LETSENCRYPT_EMAIL} --agree-tos --no-eff-email"
+
+  # Simple, non-interactive self-signed cert generator for local dev
+  gencert:
+    image: alpine:3.20
+    profiles: ["dev"]
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+    volumes:
+      - letsencrypt:/etc/letsencrypt
+    entrypoint: ["/bin/sh","-c"]
+    command: |
+      set -e
+      if [ -z "${API_DOMAIN}" ]; then echo 'API_DOMAIN not set'; exit 1; fi
+      echo "Generating self-signed cert for ${API_DOMAIN}..."
+      apk add --no-cache openssl >/dev/null
+      mkdir -p "/etc/letsencrypt/live/${API_DOMAIN}"
+      openssl req -x509 -nodes -newkey rsa:2048 -days 5 -sha256 -batch \
+        -subj "/CN=${API_DOMAIN}" \
+        -keyout "/etc/letsencrypt/live/${API_DOMAIN}/privkey.pem" \
+        -out "/etc/letsencrypt/live/${API_DOMAIN}/fullchain.pem"
+      echo 'Self-signed cert generated.'
 
 volumes:
   postgres-data:
