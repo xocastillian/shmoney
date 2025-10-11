@@ -12,7 +12,7 @@ import java.time.OffsetDateTime;
 @Table(name = "wallets")
 public class Wallet {
 
-    private static final String DEFAULT_COLOR = "#6B7280";
+    private static final String DEFAULT_COLOR = "#202020";
     private static final int SCALE = 2;
 
     @Id
