@@ -7,6 +7,7 @@ public record WalletResponse(
         Long ownerId,
         String name,
         String currencyCode,
+        String color,
         java.math.BigDecimal balance,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt

@@ -10,6 +10,8 @@ import com.shmoney.wallet.repository.WalletRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 @Service
@@ -28,10 +30,11 @@ public class WalletService {
         this.currencyService = currencyService;
     }
     
-    public Wallet create(Long ownerId, Wallet wallet, String currencyCode) {
+    public Wallet create(Long ownerId, Wallet wallet, String currencyCode, BigDecimal initialBalance) {
         wallet.setId(null);
         wallet.setOwner(resolveOwner(ownerId));
         wallet.setCurrency(resolveCurrency(currencyCode));
+        wallet.setBalance(normalizeBalance(initialBalance));
         
         return walletRepository.save(wallet);
     }
@@ -75,5 +78,10 @@ public class WalletService {
     
     private Currency resolveCurrency(String code) {
         return currencyService.getActiveByCode(code.trim());
+    }
+
+    private BigDecimal normalizeBalance(BigDecimal balance) {
+        BigDecimal value = balance == null ? BigDecimal.ZERO : balance;
+        return value.setScale(2, RoundingMode.HALF_UP);
     }
 }
