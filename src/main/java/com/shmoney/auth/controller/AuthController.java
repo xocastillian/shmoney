@@ -71,6 +71,7 @@ public class AuthController {
                 result.accessToken(), result.accessTokenExpiresAt(),
                 result.refreshToken(), result.refreshTokenExpiresAt()
         ));
+        
         return result;
     }
 }
