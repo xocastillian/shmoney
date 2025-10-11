@@ -43,7 +43,7 @@ public class WalletController {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
         Long ownerId = resolveOwnerId(request.ownerId(), current);
         Wallet wallet = walletMapper.toEntity(request);
-        Wallet created = walletService.create(ownerId, wallet, request.currencyCode());
+        Wallet created = walletService.create(ownerId, wallet, request.currencyCode(), request.balance());
         WalletResponse response = walletMapper.toResponse(created);
         
         return ResponseEntity
@@ -81,7 +81,7 @@ public class WalletController {
         Long ownerId = resolveOwnerIdForUpdate(request.ownerId(), current, existing);
         walletMapper.updateEntity(request, existing);
         Wallet updated = walletService.update(existing, ownerId, request.currencyCode());
-        
+
         return walletMapper.toResponse(updated);
     }
     

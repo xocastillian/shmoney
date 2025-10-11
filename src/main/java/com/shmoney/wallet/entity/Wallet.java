@@ -4,12 +4,16 @@ import com.shmoney.currency.entity.Currency;
 import com.shmoney.user.entity.User;
 import jakarta.persistence.*;
 
-import java.time.OffsetDateTime;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "wallets")
 public class Wallet {
+
+    private static final String DEFAULT_COLOR = "#202020";
+    private static final int SCALE = 2;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,6 +33,9 @@ public class Wallet {
     @Column(name = "balance", nullable = false, precision = 18, scale = 2)
     private BigDecimal balance;
 
+    @Column(name = "color", nullable = false, length = 16)
+    private String color;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -43,13 +50,24 @@ public class Wallet {
         }
         updatedAt = now;
         if (balance == null) {
-            balance = BigDecimal.ZERO.setScale(2);
+            balance = BigDecimal.ZERO.setScale(SCALE, RoundingMode.HALF_UP);
+        } else {
+            balance = balance.setScale(SCALE, RoundingMode.HALF_UP);
+        }
+        if (color == null || color.isBlank()) {
+            color = DEFAULT_COLOR;
         }
     }
 
     @PreUpdate
     void onUpdate() {
         updatedAt = OffsetDateTime.now();
+        if (balance != null) {
+            balance = balance.setScale(SCALE, RoundingMode.HALF_UP);
+        }
+        if (color == null || color.isBlank()) {
+            color = DEFAULT_COLOR;
+        }
     }
     
     public Long getId() {
@@ -89,7 +107,15 @@ public class Wallet {
     }
 
     public void setBalance(BigDecimal balance) {
-        this.balance = balance;
+        this.balance = balance == null ? null : balance.setScale(SCALE, RoundingMode.HALF_UP);
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color == null ? null : color.toUpperCase();
     }
 
     public OffsetDateTime getCreatedAt() {
