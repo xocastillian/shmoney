@@ -29,20 +29,22 @@ public class TokenCookieService {
                 tokenPair.accessToken(),
                 secondsUntil(tokenPair.accessTokenExpiresAt())
         );
+        
         ResponseCookie refresh = buildCookie(
                 cookieProperties.refreshTokenName(),
                 tokenPair.refreshToken(),
                 secondsUntil(tokenPair.refreshTokenExpiresAt())
         );
-        response.addHeader(HttpHeaders.SET_COOKIE, access.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, refresh.toString());
+        
+        addCookieHeader(response, access);
+        addCookieHeader(response, refresh);
     }
     
     public void clearAuthCookies(HttpServletResponse response) {
         ResponseCookie access = buildCookie(cookieProperties.accessTokenName(), "", 0);
         ResponseCookie refresh = buildCookie(cookieProperties.refreshTokenName(), "", 0);
-        response.addHeader(HttpHeaders.SET_COOKIE, access.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, refresh.toString());
+        addCookieHeader(response, access);
+        addCookieHeader(response, refresh);
     }
     
     public Optional<String> readAccessToken(HttpServletRequest request) {
@@ -77,6 +79,16 @@ public class TokenCookieService {
         }
         
         return builder.build();
+    }
+    
+    private void addCookieHeader(HttpServletResponse response, ResponseCookie cookie) {
+        String headerValue = cookie.toString();
+        
+        if (cookieProperties.partitioned()) {
+            headerValue = headerValue + "; Partitioned";
+        }
+        
+        response.addHeader(HttpHeaders.SET_COOKIE, headerValue);
     }
     
     private long secondsUntil(OffsetDateTime expiresAt) {
