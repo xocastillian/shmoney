@@ -5,6 +5,7 @@ import com.shmoney.currency.service.CurrencyService;
 import com.shmoney.user.entity.User;
 import com.shmoney.user.service.UserService;
 import com.shmoney.wallet.entity.Wallet;
+import com.shmoney.wallet.entity.WalletType;
 import com.shmoney.wallet.exception.WalletNotFoundException;
 import com.shmoney.wallet.repository.WalletRepository;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,8 @@ public class WalletService {
         wallet.setCurrency(resolveCurrency(currencyCode));
         wallet.setBalance(normalizeBalance(initialBalance));
         
+        if (wallet.getType() == null) wallet.setType(WalletType.CASH);
+        
         return walletRepository.save(wallet);
     }
     
@@ -56,12 +59,25 @@ public class WalletService {
         return walletRepository.findAll();
     }
     
-    public Wallet update(Wallet wallet, Long ownerId, String currencyCode) {
+    public Wallet update(Wallet wallet,
+                         Long ownerId,
+                         String currencyCode,
+                         WalletType type,
+                         BigDecimal balance,
+                         String color) {
         if (ownerId != null) wallet.setOwner(resolveOwner(ownerId));
         
         if (currencyCode != null && !currencyCode.isBlank()) {
             wallet.setCurrency(resolveCurrency(currencyCode));
         }
+        
+        if (type != null) wallet.setType(type);
+        
+        if (balance != null) {
+            wallet.setBalance(normalizeBalance(balance));
+        }
+        
+        if (color != null) wallet.setColor(color);
         
         return walletRepository.save(wallet);
     }
@@ -79,7 +95,7 @@ public class WalletService {
     private Currency resolveCurrency(String code) {
         return currencyService.getActiveByCode(code.trim());
     }
-
+    
     private BigDecimal normalizeBalance(BigDecimal balance) {
         BigDecimal value = balance == null ? BigDecimal.ZERO : balance;
         return value.setScale(2, RoundingMode.HALF_UP);

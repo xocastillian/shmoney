@@ -80,7 +80,14 @@ public class WalletController {
         AuthenticatedUser current = ensureCanAccess(existing);
         Long ownerId = resolveOwnerIdForUpdate(request.ownerId(), current, existing);
         walletMapper.updateEntity(request, existing);
-        Wallet updated = walletService.update(existing, ownerId, request.currencyCode());
+        Wallet updated = walletService.update(
+                existing,
+                ownerId,
+                request.currencyCode(),
+                request.type(),
+                request.balance(),
+                request.color()
+        );
 
         return walletMapper.toResponse(updated);
     }
