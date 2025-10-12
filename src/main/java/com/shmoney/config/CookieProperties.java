@@ -11,7 +11,8 @@ public record CookieProperties(
         String domain,
         String path,
         String sameSite,
-        boolean secure
+        boolean secure,
+        boolean partitioned
 ) {
     public CookieProperties {
         if (accessTokenName == null || accessTokenName.isBlank()) accessTokenName = "access_token";
@@ -20,4 +21,3 @@ public record CookieProperties(
         if (sameSite == null || sameSite.isBlank()) sameSite = "Lax";
     }
 }
-
