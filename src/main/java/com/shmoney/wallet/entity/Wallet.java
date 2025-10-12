@@ -13,6 +13,7 @@ import java.time.OffsetDateTime;
 public class Wallet {
 
     private static final String DEFAULT_COLOR = "#202020";
+    private static final WalletType DEFAULT_TYPE = WalletType.CASH;
     private static final int SCALE = 2;
 
     @Id
@@ -41,7 +42,11 @@ public class Wallet {
 
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
-    
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false, length = 32)
+    private WalletType type;
+
     @PrePersist
     void onCreate() {
         OffsetDateTime now = OffsetDateTime.now();
@@ -57,6 +62,9 @@ public class Wallet {
         if (color == null || color.isBlank()) {
             color = DEFAULT_COLOR;
         }
+        if (type == null) {
+            type = DEFAULT_TYPE;
+        }
     }
 
     @PreUpdate
@@ -67,6 +75,9 @@ public class Wallet {
         }
         if (color == null || color.isBlank()) {
             color = DEFAULT_COLOR;
+        }
+        if (type == null) {
+            type = DEFAULT_TYPE;
         }
     }
     
@@ -118,10 +129,18 @@ public class Wallet {
         this.color = color == null ? null : color.toUpperCase();
     }
 
+    public WalletType getType() {
+        return type;
+    }
+
+    public void setType(WalletType type) {
+        this.type = type;
+    }
+
     public OffsetDateTime getCreatedAt() {
         return createdAt;
     }
-    
+
     public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }

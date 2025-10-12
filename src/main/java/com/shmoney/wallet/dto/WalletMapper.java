@@ -17,6 +17,7 @@ public interface WalletMapper {
     @Mapping(target = "owner", ignore = true)
     @Mapping(target = "currency", ignore = true)
     @Mapping(target = "balance", ignore = true)
+    @Mapping(target = "color", ignore = true)
     void updateEntity(WalletUpdateRequest request, @MappingTarget Wallet wallet);
 
     @Mapping(target = "ownerId", source = "owner.id")
