@@ -3,6 +3,7 @@ package com.shmoney.wallet.transaction.service;
 import com.shmoney.currency.entity.Currency;
 import com.shmoney.currency.service.ExchangeRateService;
 import com.shmoney.wallet.entity.Wallet;
+import com.shmoney.wallet.repository.WalletRepository;
 import com.shmoney.wallet.transaction.entity.WalletTransaction;
 import com.shmoney.wallet.transaction.repository.WalletTransactionRepository;
 import org.springframework.stereotype.Service;
@@ -21,11 +22,14 @@ public class WalletTransactionService {
     private static final int RATE_SCALE = 6;
     
     private final WalletTransactionRepository walletTransactionRepository;
+    private final WalletRepository walletRepository;
     private final ExchangeRateService exchangeRateService;
     
     public WalletTransactionService(WalletTransactionRepository walletTransactionRepository,
+                                    WalletRepository walletRepository,
                                     ExchangeRateService exchangeRateService) {
         this.walletTransactionRepository = walletTransactionRepository;
+        this.walletRepository = walletRepository;
         this.exchangeRateService = exchangeRateService;
     }
     
@@ -75,8 +79,24 @@ public class WalletTransactionService {
         transaction.setExchangeRate(rate);
         transaction.setDescription(description);
         transaction.setExecutedAt(executedAt);
-        
+
+        updateBalances(fromWallet, toWallet, normalizedAmount, targetAmount);
+
         return walletTransactionRepository.save(transaction);
+    }
+
+    private void updateBalances(Wallet fromWallet,
+                                Wallet toWallet,
+                                BigDecimal sourceAmount,
+                                BigDecimal targetAmount) {
+        BigDecimal sourceBalance = fromWallet.getBalance() == null ? BigDecimal.ZERO : fromWallet.getBalance();
+        BigDecimal targetBalance = toWallet.getBalance() == null ? BigDecimal.ZERO : toWallet.getBalance();
+
+        fromWallet.setBalance(sourceBalance.subtract(sourceAmount));
+        toWallet.setBalance(targetBalance.add(targetAmount));
+
+        walletRepository.save(fromWallet);
+        walletRepository.save(toWallet);
     }
     
     @Transactional(readOnly = true)
