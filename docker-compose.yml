@@ -43,8 +43,8 @@ services:
       SECURITY_COOKIES_SECURE: ${SECURITY_COOKIES_SECURE}
       SECURITY_COOKIES_DOMAIN: ${SECURITY_COOKIES_DOMAIN}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
-    ports:
-      - "127.0.0.1:8080:8080"
+
+    # Порт 8080 не пробрасываем на хост: в проде всё ходит через nginx
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
       interval: 10s
