@@ -64,8 +64,20 @@ public class ExchangeRateService {
     public BigDecimal convert(BigDecimal amount, String sourceCurrency, String targetCurrency) {
         Objects.requireNonNull(amount, "amount");
         BigDecimal rate = getRate(sourceCurrency, targetCurrency);
-        
+
         return amount.multiply(rate).setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
+    }
+
+    public List<com.shmoney.currency.dto.ExchangeRateResponse> getAllTo(String targetCurrency) {
+        Objects.requireNonNull(targetCurrency, "targetCurrency");
+        String base = targetCurrency.toUpperCase();
+
+        return currencyService.getActiveCurrencies().stream()
+                .map(Currency::getCode)
+                .map(String::toUpperCase)
+                .filter(code -> !code.equals(base))
+                .map(code -> new com.shmoney.currency.dto.ExchangeRateResponse(code, base, getRate(code, base)))
+                .toList();
     }
     
     private BigDecimal resolvePivotRate(Currency pivot, Currency target) {
