@@ -19,9 +19,7 @@ services:
       retries: 5
 
   app:
-    build:
-      context: .
-    image: shmoney:latest
+    image: ${APP_IMAGE:-shmoney:latest}
     container_name: shmoney-app
     restart: unless-stopped
     depends_on:
@@ -46,7 +44,7 @@ services:
 
     # Порт 8080 не пробрасываем на хост: в проде всё ходит через nginx
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      test: [ "CMD", "wget", "-qO-", "http://localhost:8080/actuator/health" ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -73,11 +71,11 @@ services:
   # Dev-only helper to bootstrap a self-signed cert into the shared volume
   gen-selfsigned:
     image: alpine:3.20
-    profiles: ["dev"]
-    depends_on: []
+    profiles: [ "dev" ]
+    depends_on: [ ]
     volumes:
       - letsencrypt:/etc/letsencrypt
-    entrypoint: ["/bin/sh","-c"]
+    entrypoint: [ "/bin/sh","-c" ]
     command: >
       "set -e; \
        if [ -z \"${API_DOMAIN}\" ]; then echo 'API_DOMAIN not set'; exit 1; fi; \
@@ -97,11 +95,11 @@ services:
   certbot:
     image: certbot/certbot:latest
     container_name: shmoney-certbot
-    profiles: ["cert"]
+    profiles: [ "cert" ]
     volumes:
       - certbot-webroot:/var/www/certbot
       - letsencrypt:/etc/letsencrypt
-    entrypoint: ["/bin/sh","-c"]
+    entrypoint: [ "/bin/sh","-c" ]
     command: >
       "if [ -z \"${API_DOMAIN}\" ] || [ -z \"${LETSENCRYPT_EMAIL}\" ]; then
          echo 'Set API_DOMAIN and LETSENCRYPT_EMAIL in .env before requesting a certificate' && exit 1;
@@ -113,12 +111,12 @@ services:
   # Simple, non-interactive self-signed cert generator for local dev
   gencert:
     image: alpine:3.20
-    profiles: ["dev"]
+    profiles: [ "dev" ]
     environment:
       API_DOMAIN: ${API_DOMAIN}
     volumes:
       - letsencrypt:/etc/letsencrypt
-    entrypoint: ["/bin/sh","-c"]
+    entrypoint: [ "/bin/sh","-c" ]
     command: |
       set -e
       if [ -z "${API_DOMAIN}" ]; then echo 'API_DOMAIN not set'; exit 1; fi
