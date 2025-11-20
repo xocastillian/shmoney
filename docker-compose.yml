@@ -56,6 +56,8 @@ services:
     depends_on:
       app:
         condition: service_started
+      frontend:
+        condition: service_started
     environment:
       API_DOMAIN: ${API_DOMAIN}
       FRONT_DOMAIN: ${FRONT_DOMAIN}
@@ -64,7 +66,6 @@ services:
       - "443:443"
     volumes:
       - ./deploy/nginx/templates:/etc/nginx/templates:ro
-      - ./web-dist:/usr/share/nginx/html:ro
       - certbot-webroot:/var/www/certbot
       - letsencrypt:/etc/letsencrypt
 
@@ -128,6 +129,13 @@ services:
         -keyout "/etc/letsencrypt/live/${API_DOMAIN}/privkey.pem" \
         -out "/etc/letsencrypt/live/${API_DOMAIN}/fullchain.pem"
       echo 'Self-signed cert generated.'
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-shmoney-frontend:latest}
+    container_name: shmoney-frontend
+    restart: unless-stopped
+    expose:
+      - "80"
 
 volumes:
   postgres-data:
