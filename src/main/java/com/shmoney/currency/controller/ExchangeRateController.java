@@ -34,8 +34,14 @@ public class ExchangeRateController {
     public ExchangeRateResponse getRate(@RequestParam @NotBlank String from,
                                         @RequestParam @NotBlank String to) {
         BigDecimal rate = exchangeRateService.getRate(from, to);
-        
+
         return new ExchangeRateResponse(from.toUpperCase(), to.toUpperCase(), rate);
+    }
+
+    @Operation(summary = "Курсы всех валют к базовой")
+    @GetMapping("/all")
+    public java.util.List<ExchangeRateResponse> getAllTo(@RequestParam(defaultValue = "KZT") @NotBlank String to) {
+        return exchangeRateService.getAllTo(to);
     }
     
     @Operation(summary = "Конвертировать сумму между валютами")
