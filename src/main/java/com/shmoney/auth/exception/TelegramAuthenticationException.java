@@ -8,7 +8,7 @@ public class TelegramAuthenticationException extends RuntimeException {
     public TelegramAuthenticationException(String message) {
         super(message);
     }
-
+    
     public TelegramAuthenticationException(String message, Throwable cause) {
         super(message, cause);
     }
