@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.sql.Types;
 import java.util.List;
@@ -93,8 +94,12 @@ public class TransactionFeedRepository {
                 .addValue("walletId", walletId, Types.BIGINT)
                 .addValue("categoryId", categoryId, Types.BIGINT)
                 .addValue("subcategoryId", subcategoryId, Types.BIGINT)
-                .addValue("fromDate", from, Types.TIMESTAMP)
-                .addValue("toDate", to, Types.TIMESTAMP);
+                .addValue("fromDate", toTimestamp(from), Types.TIMESTAMP)
+                .addValue("toDate", toTimestamp(to), Types.TIMESTAMP);
+    }
+
+    private Timestamp toTimestamp(OffsetDateTime dateTime) {
+        return dateTime == null ? null : Timestamp.from(dateTime.toInstant());
     }
 
     private static class TransactionFeedRowMapper implements RowMapper<TransactionFeedItem> {
