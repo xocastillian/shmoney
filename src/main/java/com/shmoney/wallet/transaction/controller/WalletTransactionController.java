@@ -7,6 +7,7 @@ import com.shmoney.wallet.service.WalletService;
 import com.shmoney.wallet.transaction.dto.WalletTransactionMapper;
 import com.shmoney.wallet.transaction.dto.WalletTransactionRequest;
 import com.shmoney.wallet.transaction.dto.WalletTransactionResponse;
+import com.shmoney.wallet.transaction.dto.WalletTransactionUpdateRequest;
 import com.shmoney.wallet.transaction.entity.WalletTransaction;
 import com.shmoney.wallet.transaction.service.WalletTransactionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -79,6 +80,46 @@ public class WalletTransactionController {
                 .map(walletTransactionMapper::toResponse)
                 .toList();
     }
+
+    @Operation(summary = "Получить транзакцию по id")
+    @GetMapping("/{id}")
+    public WalletTransactionResponse getTransaction(@PathVariable Long id) {
+        AuthenticatedUser current = currentUserProvider.requireCurrentUser();
+        WalletTransaction transaction = walletTransactionService.getById(id);
+        ensureCanAccess(current, transaction);
+        return walletTransactionMapper.toResponse(transaction);
+    }
+
+    @Operation(summary = "Удалить транзакцию между кошельками")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        AuthenticatedUser current = currentUserProvider.requireCurrentUser();
+        WalletTransaction transaction = walletTransactionService.getById(id);
+        ensureCanAccess(current, transaction);
+        walletTransactionService.delete(transaction);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Обновить транзакцию между кошельками")
+    @PatchMapping("/{id}")
+    public WalletTransactionResponse update(@PathVariable Long id,
+                                            @Valid @RequestBody WalletTransactionUpdateRequest request) {
+        AuthenticatedUser current = currentUserProvider.requireCurrentUser();
+        WalletTransaction transaction = walletTransactionService.getById(id);
+        ensureCanAccess(current, transaction);
+
+        Wallet fromWallet = request.fromWalletId() == null
+                ? transaction.getFromWallet()
+                : walletService.getById(request.fromWalletId());
+        Wallet toWallet = request.toWalletId() == null
+                ? transaction.getToWallet()
+                : walletService.getById(request.toWalletId());
+
+        ensureCanTransfer(current, fromWallet, toWallet);
+
+        WalletTransaction updated = walletTransactionService.update(transaction, request, fromWallet, toWallet);
+        return walletTransactionMapper.toResponse(updated);
+    }
     
     private void ensureCanTransfer(AuthenticatedUser current, Wallet fromWallet, Wallet toWallet) {
         boolean isAdmin = currentUserProvider.isAdmin(current);
@@ -94,6 +135,19 @@ public class WalletTransactionController {
     
     private void ensureCanAccess(AuthenticatedUser current, Wallet wallet) {
         if (!wallet.getOwner().getId().equals(current.id()) && !currentUserProvider.isAdmin(current)) {
+            throw new AccessDeniedException("Forbidden");
+        }
+    }
+
+    private void ensureCanAccess(AuthenticatedUser current, WalletTransaction transaction) {
+        boolean isAdmin = currentUserProvider.isAdmin(current);
+        if (isAdmin) {
+            return;
+        }
+        Long currentId = current.id();
+        boolean ownsFrom = transaction.getFromWallet().getOwner().getId().equals(currentId);
+        boolean ownsTo = transaction.getToWallet().getOwner().getId().equals(currentId);
+        if (!ownsFrom && !ownsTo) {
             throw new AccessDeniedException("Forbidden");
         }
     }

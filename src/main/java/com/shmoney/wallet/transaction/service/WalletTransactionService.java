@@ -4,7 +4,9 @@ import com.shmoney.currency.entity.Currency;
 import com.shmoney.currency.service.ExchangeRateService;
 import com.shmoney.wallet.entity.Wallet;
 import com.shmoney.wallet.repository.WalletRepository;
+import com.shmoney.wallet.transaction.dto.WalletTransactionUpdateRequest;
 import com.shmoney.wallet.transaction.entity.WalletTransaction;
+import com.shmoney.wallet.transaction.exception.WalletTransactionNotFoundException;
 import com.shmoney.wallet.transaction.repository.WalletTransactionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,41 +48,20 @@ public class WalletTransactionService {
             throw new IllegalArgumentException("Amount must be greater than zero");
         }
         
-        Currency sourceCurrency = fromWallet.getCurrency();
-        Currency targetCurrency = toWallet.getCurrency();
-        
-        BigDecimal normalizedAmount = amount.setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
-        BigDecimal rate;
-        BigDecimal targetAmount;
-        
-        if (sourceCurrency.getId().equals(targetCurrency.getId())) {
-            rate = BigDecimal.ONE;
-        } else {
-            rate = exchangeRateService.getRate(sourceCurrency.getCode(), targetCurrency.getCode());
-        }
-        
-        rate = rate.setScale(RATE_SCALE, RoundingMode.HALF_UP);
-        
-        if (sourceCurrency.getId().equals(targetCurrency.getId())) {
-            targetAmount = normalizedAmount;
-        } else {
-            targetAmount = normalizedAmount
-                    .multiply(rate)
-                    .setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
-        }
+        AmountComputation computation = computeAmounts(fromWallet.getCurrency(), toWallet.getCurrency(), amount);
         
         WalletTransaction transaction = new WalletTransaction();
         transaction.setFromWallet(fromWallet);
         transaction.setToWallet(toWallet);
-        transaction.setSourceCurrency(sourceCurrency);
-        transaction.setTargetCurrency(targetCurrency);
-        transaction.setSourceAmount(normalizedAmount);
-        transaction.setTargetAmount(targetAmount);
-        transaction.setExchangeRate(rate);
+        transaction.setSourceCurrency(fromWallet.getCurrency());
+        transaction.setTargetCurrency(toWallet.getCurrency());
+        transaction.setSourceAmount(computation.sourceAmount());
+        transaction.setTargetAmount(computation.targetAmount());
+        transaction.setExchangeRate(computation.rate());
         transaction.setDescription(description);
         transaction.setExecutedAt(executedAt);
 
-        updateBalances(fromWallet, toWallet, normalizedAmount, targetAmount);
+        updateBalances(fromWallet, toWallet, computation.sourceAmount(), computation.targetAmount());
 
         return walletTransactionRepository.save(transaction);
     }
@@ -103,9 +84,99 @@ public class WalletTransactionService {
     public List<WalletTransaction> getAll() {
         return walletTransactionRepository.findAllByOrderByExecutedAtDesc();
     }
-    
+
     @Transactional(readOnly = true)
     public List<WalletTransaction> getByWallet(Long walletId) {
         return walletTransactionRepository.findAllByFromWalletIdOrToWalletIdOrderByExecutedAtDesc(walletId, walletId);
+    }
+
+    @Transactional(readOnly = true)
+    public WalletTransaction getById(Long id) {
+        return walletTransactionRepository.findById(id)
+                .orElseThrow(() -> new WalletTransactionNotFoundException(id));
+    }
+
+    public void delete(WalletTransaction transaction) {
+        revertBalances(transaction.getFromWallet(), transaction.getToWallet(),
+                transaction.getSourceAmount(), transaction.getTargetAmount());
+        walletTransactionRepository.delete(transaction);
+    }
+
+    public WalletTransaction update(WalletTransaction transaction,
+                                    WalletTransactionUpdateRequest request,
+                                    Wallet fromWallet,
+                                    Wallet toWallet) {
+        Wallet resolvedFrom = fromWallet == null ? transaction.getFromWallet() : fromWallet;
+        Wallet resolvedTo = toWallet == null ? transaction.getToWallet() : toWallet;
+
+        if (resolvedFrom.getId().equals(resolvedTo.getId())) {
+            throw new IllegalArgumentException("Cannot transfer to the same wallet");
+        }
+
+        BigDecimal sourceAmount = request.amount() == null ? transaction.getSourceAmount() : request.amount();
+        if (sourceAmount == null || sourceAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero");
+        }
+
+        OffsetDateTime executedAt = request.executedAt() == null ? transaction.getExecutedAt() : request.executedAt();
+        String description = request.description() == null ? transaction.getDescription() : request.description();
+
+        revertBalances(transaction.getFromWallet(), transaction.getToWallet(),
+                transaction.getSourceAmount(), transaction.getTargetAmount());
+
+        AmountComputation computation = computeAmounts(resolvedFrom.getCurrency(), resolvedTo.getCurrency(), sourceAmount);
+
+        transaction.setFromWallet(resolvedFrom);
+        transaction.setToWallet(resolvedTo);
+        transaction.setSourceCurrency(resolvedFrom.getCurrency());
+        transaction.setTargetCurrency(resolvedTo.getCurrency());
+        transaction.setSourceAmount(computation.sourceAmount());
+        transaction.setTargetAmount(computation.targetAmount());
+        transaction.setExchangeRate(computation.rate());
+        transaction.setDescription(description);
+        transaction.setExecutedAt(executedAt);
+
+        updateBalances(resolvedFrom, resolvedTo, computation.sourceAmount(), computation.targetAmount());
+        return walletTransactionRepository.save(transaction);
+    }
+
+    private void revertBalances(Wallet fromWallet,
+                                Wallet toWallet,
+                                BigDecimal sourceAmount,
+                                BigDecimal targetAmount) {
+        BigDecimal sourceBalance = fromWallet.getBalance() == null ? BigDecimal.ZERO : fromWallet.getBalance();
+        BigDecimal targetBalance = toWallet.getBalance() == null ? BigDecimal.ZERO : toWallet.getBalance();
+
+        fromWallet.setBalance(sourceBalance.add(sourceAmount));
+        toWallet.setBalance(targetBalance.subtract(targetAmount));
+
+        walletRepository.save(fromWallet);
+        walletRepository.save(toWallet);
+    }
+
+    private AmountComputation computeAmounts(Currency sourceCurrency,
+                                             Currency targetCurrency,
+                                             BigDecimal amount) {
+        BigDecimal normalizedAmount = amount.setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
+        BigDecimal rate;
+        if (sourceCurrency.getId().equals(targetCurrency.getId())) {
+            rate = BigDecimal.ONE;
+        } else {
+            rate = exchangeRateService.getRate(sourceCurrency.getCode(), targetCurrency.getCode());
+        }
+        rate = rate.setScale(RATE_SCALE, RoundingMode.HALF_UP);
+
+        BigDecimal targetAmount;
+        if (sourceCurrency.getId().equals(targetCurrency.getId())) {
+            targetAmount = normalizedAmount;
+        } else {
+            targetAmount = normalizedAmount
+                    .multiply(rate)
+                    .setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
+        }
+        return new AmountComputation(normalizedAmount, targetAmount, rate);
+    }
+
+    private record AmountComputation(BigDecimal sourceAmount, BigDecimal targetAmount, BigDecimal rate) {
     }
 }
