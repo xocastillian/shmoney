@@ -67,6 +67,7 @@ public class AuthController {
         logger.info("POST /api/auth/telegram len={} snippet={}...", len, snippet);
         
         AuthResponse result = telegramAuthService.authenticate(request);
+        
         tokenCookieService.writeAuthCookies(httpResponse, new com.shmoney.auth.token.TokenPair(
                 result.accessToken(), result.accessTokenExpiresAt(),
                 result.refreshToken(), result.refreshTokenExpiresAt()
