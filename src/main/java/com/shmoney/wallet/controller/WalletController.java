@@ -3,6 +3,7 @@ package com.shmoney.wallet.controller;
 import com.shmoney.auth.security.AuthenticatedUser;
 import com.shmoney.auth.security.CurrentUserProvider;
 import com.shmoney.wallet.dto.WalletCreateRequest;
+import com.shmoney.wallet.dto.WalletCurrencyBalanceResponse;
 import com.shmoney.wallet.dto.WalletMapper;
 import com.shmoney.wallet.dto.WalletResponse;
 import com.shmoney.wallet.dto.WalletUpdateRequest;
@@ -70,6 +71,19 @@ public class WalletController {
         
         return wallets.stream()
                 .map(walletMapper::toResponse)
+                .toList();
+    }
+
+    @Operation(summary = "Общий баланс по валютам")
+    @GetMapping("/balances")
+    public List<WalletCurrencyBalanceResponse> getBalancesByCurrency() {
+        AuthenticatedUser current = currentUserProvider.requireCurrentUser();
+        List<WalletService.CurrencyBalance> balances = currentUserProvider.isAdmin(current)
+                ? walletService.getCurrencyBalancesForAllOwners()
+                : walletService.getCurrencyBalancesForOwner(current.id());
+
+        return balances.stream()
+                .map(balance -> new WalletCurrencyBalanceResponse(balance.currencyCode(), balance.totalBalance()))
                 .toList();
     }
     
