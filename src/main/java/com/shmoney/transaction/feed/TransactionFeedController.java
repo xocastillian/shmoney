@@ -37,6 +37,7 @@ public class TransactionFeedController {
                                                      @RequestParam(required = false) Long walletId,
                                                      @RequestParam(required = false) Long categoryId,
                                                      @RequestParam(required = false) Long subcategoryId,
+                                                     @RequestParam(required = false) TransactionFeedPeriod period,
                                                      @RequestParam(required = false)
                                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                                                      OffsetDateTime from,
@@ -44,6 +45,7 @@ public class TransactionFeedController {
                                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                                                      OffsetDateTime to) {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
-        return feedService.getFeed(current.id(), type, walletId, categoryId, subcategoryId, from, to, page, size);
+        return feedService.getFeed(current.id(), type, walletId, categoryId, subcategoryId,
+                from, to, period, page, size);
     }
 }

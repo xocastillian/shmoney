@@ -93,8 +93,8 @@ public class TransactionFeedRepository {
                 .addValue("walletId", walletId, Types.BIGINT)
                 .addValue("categoryId", categoryId, Types.BIGINT)
                 .addValue("subcategoryId", subcategoryId, Types.BIGINT)
-                .addValue("fromDate", from, Types.TIMESTAMP)
-                .addValue("toDate", to, Types.TIMESTAMP);
+                .addValue("fromDate", from, Types.TIMESTAMP_WITH_TIMEZONE)
+                .addValue("toDate", to, Types.TIMESTAMP_WITH_TIMEZONE);
     }
 
     private static class TransactionFeedRowMapper implements RowMapper<TransactionFeedItem> {

@@ -13,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -58,7 +60,17 @@ public class WalletService {
     public List<Wallet> getAll() {
         return walletRepository.findAll();
     }
-    
+
+    @Transactional(readOnly = true)
+    public List<CurrencyBalance> getCurrencyBalancesForOwner(Long ownerId) {
+        return aggregateBalances(walletRepository.findAllByOwnerId(ownerId));
+    }
+
+    @Transactional(readOnly = true)
+    public List<CurrencyBalance> getCurrencyBalancesForAllOwners() {
+        return aggregateBalances(walletRepository.findAll());
+    }
+
     public Wallet update(Wallet wallet,
                          Long ownerId,
                          String currencyCode,
@@ -99,5 +111,25 @@ public class WalletService {
     private BigDecimal normalizeBalance(BigDecimal balance) {
         BigDecimal value = balance == null ? BigDecimal.ZERO : balance;
         return value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private List<CurrencyBalance> aggregateBalances(List<Wallet> wallets) {
+        Map<String, BigDecimal> totals = new HashMap<>();
+        for (Wallet wallet : wallets) {
+            if (wallet.getCurrency() == null) {
+                continue;
+            }
+            String code = wallet.getCurrency().getCode();
+            BigDecimal walletBalance = wallet.getBalance() == null ? BigDecimal.ZERO : wallet.getBalance();
+            totals.merge(code, walletBalance, BigDecimal::add);
+        }
+
+        return totals.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> new CurrencyBalance(entry.getKey(), entry.getValue().setScale(2, RoundingMode.HALF_UP)))
+                .toList();
+    }
+
+    public record CurrencyBalance(String currencyCode, BigDecimal totalBalance) {
     }
 }
