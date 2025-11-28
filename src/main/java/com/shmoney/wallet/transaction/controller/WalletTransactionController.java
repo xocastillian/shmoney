@@ -61,15 +61,14 @@ public class WalletTransactionController {
                 .body(walletTransactionMapper.toResponse(transaction));
     }
     
-    @Operation(summary = "Получить список транзакций (все для ADMIN, либо по кошельку)")
+    @Operation(summary = "Получить список транзакций (только свои или по кошельку)")
     @GetMapping
     public List<WalletTransactionResponse> getTransactions(@RequestParam(required = false) Long walletId) {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
         List<WalletTransaction> transactions;
         
         if (walletId == null) {
-            ensureAdmin(current);
-            transactions = walletTransactionService.getAll();
+            transactions = walletTransactionService.getByOwner(current.id());
         } else {
             Wallet wallet = walletService.getById(walletId);
             ensureCanAccess(current, wallet);
@@ -80,7 +79,7 @@ public class WalletTransactionController {
                 .map(walletTransactionMapper::toResponse)
                 .toList();
     }
-
+    
     @Operation(summary = "Получить транзакцию по id")
     @GetMapping("/{id}")
     public WalletTransactionResponse getTransaction(@PathVariable Long id) {
@@ -89,7 +88,7 @@ public class WalletTransactionController {
         ensureCanAccess(current, transaction);
         return walletTransactionMapper.toResponse(transaction);
     }
-
+    
     @Operation(summary = "Удалить транзакцию между кошельками")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
@@ -99,7 +98,7 @@ public class WalletTransactionController {
         walletTransactionService.delete(transaction);
         return ResponseEntity.noContent().build();
     }
-
+    
     @Operation(summary = "Обновить транзакцию между кошельками")
     @PatchMapping("/{id}")
     public WalletTransactionResponse update(@PathVariable Long id,
@@ -107,52 +106,42 @@ public class WalletTransactionController {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
         WalletTransaction transaction = walletTransactionService.getById(id);
         ensureCanAccess(current, transaction);
-
+        
         Wallet fromWallet = request.fromWalletId() == null
                 ? transaction.getFromWallet()
                 : walletService.getById(request.fromWalletId());
         Wallet toWallet = request.toWalletId() == null
                 ? transaction.getToWallet()
                 : walletService.getById(request.toWalletId());
-
+        
         ensureCanTransfer(current, fromWallet, toWallet);
-
+        
         WalletTransaction updated = walletTransactionService.update(transaction, request, fromWallet, toWallet);
         return walletTransactionMapper.toResponse(updated);
     }
     
     private void ensureCanTransfer(AuthenticatedUser current, Wallet fromWallet, Wallet toWallet) {
-        boolean isAdmin = currentUserProvider.isAdmin(current);
-        
-        if (!isAdmin && !fromWallet.getOwner().getId().equals(current.id())) {
+        if (!fromWallet.getOwner().getId().equals(current.id())) {
             throw new AccessDeniedException("Forbidden");
         }
         
-        if (!isAdmin && !toWallet.getOwner().getId().equals(current.id())) {
+        if (!toWallet.getOwner().getId().equals(current.id())) {
             throw new AccessDeniedException("Forbidden");
         }
     }
     
     private void ensureCanAccess(AuthenticatedUser current, Wallet wallet) {
-        if (!wallet.getOwner().getId().equals(current.id()) && !currentUserProvider.isAdmin(current)) {
+        if (!wallet.getOwner().getId().equals(current.id())) {
             throw new AccessDeniedException("Forbidden");
         }
     }
-
+    
     private void ensureCanAccess(AuthenticatedUser current, WalletTransaction transaction) {
-        boolean isAdmin = currentUserProvider.isAdmin(current);
-        if (isAdmin) {
-            return;
-        }
         Long currentId = current.id();
         boolean ownsFrom = transaction.getFromWallet().getOwner().getId().equals(currentId);
         boolean ownsTo = transaction.getToWallet().getOwner().getId().equals(currentId);
         if (!ownsFrom && !ownsTo) {
             throw new AccessDeniedException("Forbidden");
         }
-    }
-    
-    private void ensureAdmin(AuthenticatedUser current) {
-        if (!currentUserProvider.isAdmin(current)) throw new AccessDeniedException("Forbidden");
     }
 }

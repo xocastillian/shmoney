@@ -15,8 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @Tag(name = "Users")
 @SecurityRequirement(name = "bearer-jwt")
 @RestController
@@ -41,12 +39,12 @@ public class UserController {
         return userMapper.toResponse(userService.getById(id));
     }
     
-    @Operation(summary = "Получить всх пользователей")
+    @Operation(summary = "Получить текущего пользователя")
     @GetMapping
-    public List<UserResponse> getAll() {
-        return userService.getAll().stream()
-                .map(userMapper::toResponse)
-                .toList();
+    public UserResponse getCurrent() {
+        AuthenticatedUser current = currentUserProvider.requireCurrentUser();
+        User user = userService.getById(current.id());
+        return userMapper.toResponse(user);
     }
     
     @Operation(summary = "Обновить пользователя по id")
@@ -55,14 +53,9 @@ public class UserController {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
         ensureCanAccessUser(id, current);
         User existing = userService.getById(id);
-        String originalRole = existing.getRole();
         boolean originalSubscription = existing.isSubscriptionActive();
         userMapper.updateEntity(request, existing);
-
-        if (!currentUserProvider.isAdmin(current)) {
-            existing.setRole(originalRole);
-            existing.setSubscriptionActive(originalSubscription);
-        }
+        existing.setSubscriptionActive(originalSubscription);
 
         User updated = userService.update(existing);
 
@@ -86,7 +79,7 @@ public class UserController {
     private void ensureCanAccessUser(Long id, AuthenticatedUser current) {
         boolean isOwner = current.id().equals(id);
         
-        if (!isOwner && !currentUserProvider.isAdmin(current)) {
+        if (!isOwner) {
             throw new AccessDeniedException("Forbidden");
         }
     }

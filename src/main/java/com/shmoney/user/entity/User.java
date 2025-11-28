@@ -23,9 +23,6 @@ public class User {
     @Column(name = "telegram_language_code")
     private String telegramLanguageCode;
 
-    @Column(nullable = false)
-    private String role;
-
     @Column(name = "subscription_active", nullable = false)
     private boolean subscriptionActive;
 
@@ -82,14 +79,6 @@ public class User {
 
     public void setTelegramLanguageCode(String telegramLanguageCode) {
         this.telegramLanguageCode = telegramLanguageCode;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
     }
 
     public boolean isSubscriptionActive() {

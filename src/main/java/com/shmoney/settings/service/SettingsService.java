@@ -26,13 +26,13 @@ public class SettingsService {
                     lang -> lang));
     
     private static final ApplicationLanguage DEFAULT_LANGUAGE = ApplicationLanguage.RU;
-
+    
     private final AppSettingsRepository appSettingsRepository;
-
+    
     public SettingsService(AppSettingsRepository appSettingsRepository) {
         this.appSettingsRepository = appSettingsRepository;
     }
-
+    
     public AppSettingsResponse getSettings() {
         AppSettings settings = getOrCreateSettings();
         return buildResponse(settings);
@@ -52,18 +52,18 @@ public class SettingsService {
                 SUPPORTED_LANGUAGES.stream().map(ApplicationLanguage::code).toList()
         );
     }
-
+    
     private AppSettings getOrCreateSettings() {
         return appSettingsRepository.findTopByOrderByIdAsc()
                 .orElseGet(this::createDefaultSettings);
     }
-
+    
     private AppSettings createDefaultSettings() {
         AppSettings settings = new AppSettings();
         settings.setDefaultLanguage(DEFAULT_LANGUAGE.code());
         return appSettingsRepository.save(settings);
     }
-
+    
     private ApplicationLanguage resolveLanguage(String code) {
         if (code == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Language code is required");

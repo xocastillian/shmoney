@@ -91,6 +91,12 @@ public class WalletTransactionService {
     }
 
     @Transactional(readOnly = true)
+    public List<WalletTransaction> getByOwner(Long ownerId) {
+        return walletTransactionRepository
+                .findAllByFromWalletOwnerIdOrToWalletOwnerIdOrderByExecutedAtDesc(ownerId, ownerId);
+    }
+
+    @Transactional(readOnly = true)
     public WalletTransaction getById(Long id) {
         return walletTransactionRepository.findById(id)
                 .orElseThrow(() -> new WalletTransactionNotFoundException(id));

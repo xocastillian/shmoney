@@ -9,7 +9,6 @@ public record UserResponse(
     Long telegramUserId,
     String telegramUsername,
     String telegramLanguageCode,
-    String role,
     boolean subscriptionActive,
     OffsetDateTime createdAt,
     OffsetDateTime updatedAt,

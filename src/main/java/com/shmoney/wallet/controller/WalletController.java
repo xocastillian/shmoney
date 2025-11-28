@@ -2,11 +2,7 @@ package com.shmoney.wallet.controller;
 
 import com.shmoney.auth.security.AuthenticatedUser;
 import com.shmoney.auth.security.CurrentUserProvider;
-import com.shmoney.wallet.dto.WalletCreateRequest;
-import com.shmoney.wallet.dto.WalletCurrencyBalanceResponse;
-import com.shmoney.wallet.dto.WalletMapper;
-import com.shmoney.wallet.dto.WalletResponse;
-import com.shmoney.wallet.dto.WalletUpdateRequest;
+import com.shmoney.wallet.dto.*;
 import com.shmoney.wallet.entity.Wallet;
 import com.shmoney.wallet.service.WalletService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -61,27 +57,23 @@ public class WalletController {
         return walletMapper.toResponse(wallet);
     }
     
-    @Operation(summary = "Список кошельков (свои или все для ADMIN)")
+    @Operation(summary = "Список кошельков (только свои)")
     @GetMapping
     public List<WalletResponse> getAll() {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
-        List<Wallet> wallets = currentUserProvider.isAdmin(current)
-                ? walletService.getAll()
-                : walletService.getByOwner(current.id());
+        List<Wallet> wallets = walletService.getByOwner(current.id());
         
         return wallets.stream()
                 .map(walletMapper::toResponse)
                 .toList();
     }
-
+    
     @Operation(summary = "Общий баланс по валютам")
     @GetMapping("/balances")
     public List<WalletCurrencyBalanceResponse> getBalancesByCurrency() {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
-        List<WalletService.CurrencyBalance> balances = currentUserProvider.isAdmin(current)
-                ? walletService.getCurrencyBalancesForAllOwners()
-                : walletService.getCurrencyBalancesForOwner(current.id());
-
+        List<WalletService.CurrencyBalance> balances = walletService.getCurrencyBalancesForOwner(current.id());
+        
         return balances.stream()
                 .map(balance -> new WalletCurrencyBalanceResponse(balance.currencyCode(), balance.totalBalance()))
                 .toList();
@@ -102,7 +94,7 @@ public class WalletController {
                 request.balance(),
                 request.color()
         );
-
+        
         return walletMapper.toResponse(updated);
     }
     
@@ -120,29 +112,30 @@ public class WalletController {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
         boolean isOwner = wallet.getOwner().getId().equals(current.id());
         
-        if (!isOwner && !currentUserProvider.isAdmin(current)) throw new AccessDeniedException("Forbidden");
+        if (!isOwner) throw new AccessDeniedException("Forbidden");
         
         return current;
     }
     
     private Long resolveOwnerId(Long requestedOwnerId, AuthenticatedUser current) {
-        if (requestedOwnerId == null) return current.id();
-        if (currentUserProvider.isAdmin(current)) return requestedOwnerId;
-        if (!requestedOwnerId.equals(current.id())) throw new AccessDeniedException("Forbidden");
+        if (requestedOwnerId == null || requestedOwnerId.equals(current.id())) {
+            return current.id();
+        }
         
-        return requestedOwnerId;
+        throw new AccessDeniedException("Forbidden");
     }
     
     private Long resolveOwnerIdForUpdate(Long requestedOwnerId,
                                          AuthenticatedUser current,
                                          Wallet existing) {
-        if (requestedOwnerId == null) return null;
-        if (currentUserProvider.isAdmin(current)) return requestedOwnerId;
-        
         Long currentOwnerId = existing.getOwner().getId();
         
-        if (!requestedOwnerId.equals(currentOwnerId)) throw new AccessDeniedException("Forbidden");
+        if (!currentOwnerId.equals(current.id())) throw new AccessDeniedException("Forbidden");
         
-        return requestedOwnerId;
+        if (requestedOwnerId == null || requestedOwnerId.equals(currentOwnerId)) {
+            return null;
+        }
+        
+        throw new AccessDeniedException("Forbidden");
     }
 }
