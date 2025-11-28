@@ -10,16 +10,11 @@ import java.time.Duration;
 public record TelegramProperties(
         boolean enabled,
         String botToken,
-        Duration initDataMaxAge,
-        String defaultRole
+        Duration initDataMaxAge
 ) {
     public TelegramProperties {
         if (initDataMaxAge == null) {
             initDataMaxAge = Duration.ofMinutes(5);
-        }
-        
-        if (defaultRole == null || defaultRole.isBlank()) {
-            defaultRole = "USER";
         }
     }
 }

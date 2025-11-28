@@ -98,7 +98,7 @@ public class TelegramAuthService {
                 payload.languageCode()
         );
         
-        User user = userService.syncTelegramUser(telegramUser, properties.defaultRole());
+        User user = userService.syncTelegramUser(telegramUser);
         TokenPair tokenPair = jwtTokenService.generateTokenPair(user);
         
         return new AuthResponse(

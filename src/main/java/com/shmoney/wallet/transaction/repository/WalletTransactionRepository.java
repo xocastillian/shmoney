@@ -15,6 +15,9 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
     @EntityGraph(attributePaths = {"fromWallet", "fromWallet.owner", "toWallet", "toWallet.owner", "sourceCurrency", "targetCurrency"})
     List<WalletTransaction> findAllByOrderByExecutedAtDesc();
 
+    @EntityGraph(attributePaths = {"fromWallet", "fromWallet.owner", "toWallet", "toWallet.owner", "sourceCurrency", "targetCurrency"})
+    List<WalletTransaction> findAllByFromWalletOwnerIdOrToWalletOwnerIdOrderByExecutedAtDesc(Long fromOwnerId, Long toOwnerId);
+
     @Override
     @EntityGraph(attributePaths = {"fromWallet", "fromWallet.owner", "toWallet", "toWallet.owner", "sourceCurrency", "targetCurrency"})
     Optional<WalletTransaction> findById(Long id);

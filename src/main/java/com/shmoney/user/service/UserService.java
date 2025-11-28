@@ -8,8 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.List;
-
 @Service
 @Transactional
 public class UserService {
@@ -27,19 +25,14 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
     
-    @Transactional(readOnly = true)
-    public List<User> getAll() {
-        return userRepository.findAll();
-    }
-    
-    public User syncTelegramUser(TelegramUserData data, String defaultRole) {
+    public User syncTelegramUser(TelegramUserData data) {
         if (data == null || data.id() == null) {
             throw new IllegalArgumentException("Telegram user data is incomplete");
         }
         
         return userRepository.findByTelegramUserId(data.id())
-                .map(existing -> updateTelegramUser(existing, data, defaultRole))
-                .orElseGet(() -> createTelegramUser(data, defaultRole));
+                .map(existing -> updateTelegramUser(existing, data))
+                .orElseGet(() -> createTelegramUser(data));
     }
     
     public User update(User user) {
@@ -54,25 +47,19 @@ public class UserService {
         userRepository.deleteById(id);
     }
     
-    private User createTelegramUser(TelegramUserData data, String defaultRole) {
+    private User createTelegramUser(TelegramUserData data) {
         User user = new User();
         user.setTelegramUserId(data.id());
         user.setTelegramUsername(resolveTelegramUsername(data));
         user.setTelegramLanguageCode(data.languageCode());
-        user.setRole(resolveTelegramRole(defaultRole));
         user.setSubscriptionActive(false);
         
         return userRepository.save(user);
     }
     
-    private User updateTelegramUser(User existing, TelegramUserData data, String defaultRole) {
+    private User updateTelegramUser(User existing, TelegramUserData data) {
         existing.setTelegramUsername(resolveTelegramUsername(data));
         existing.setTelegramLanguageCode(data.languageCode());
-        
-        if (!StringUtils.hasText(existing.getRole())) {
-            existing.setRole(resolveTelegramRole(defaultRole));
-        }
-        
         return userRepository.save(existing);
     }
     
@@ -100,9 +87,4 @@ public class UserService {
         return fallback.toString().replaceAll("\\s+", "_");
     }
     
-    private String resolveTelegramRole(String configuredRole) {
-        String role = StringUtils.hasText(configuredRole) ? configuredRole.trim() : "USER";
-        
-        return role.toUpperCase();
-    }
 }

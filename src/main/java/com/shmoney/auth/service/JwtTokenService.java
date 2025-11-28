@@ -23,7 +23,6 @@ import java.util.Objects;
 public class JwtTokenService {
     
     private static final String TOKEN_TYPE_CLAIM = "token_type";
-    private static final String ROLE_CLAIM = "role";
     private static final String NAME_CLAIM = "name";
     
     private final JwtProperties properties;
@@ -65,7 +64,6 @@ public class JwtTokenService {
         String token = Jwts.builder()
                 .subject(String.valueOf(user.getId()))
                 .claim(NAME_CLAIM, user.getTelegramUsername())
-                .claim(ROLE_CLAIM, user.getRole())
                 .claim(TOKEN_TYPE_CLAIM, type.claimValue())
                 .issuedAt(Date.from(issuedAt.toInstant()))
                 .expiration(Date.from(expiresAt.toInstant()))
@@ -87,10 +85,9 @@ public class JwtTokenService {
             
             Long userId = Long.valueOf(claims.getSubject());
             String displayName = claims.get(NAME_CLAIM, String.class);
-            String role = claims.get(ROLE_CLAIM, String.class);
             OffsetDateTime expiresAt = OffsetDateTime.ofInstant(claims.getExpiration().toInstant(), ZoneOffset.UTC);
-            
-            return new JwtTokenDetails(userId, displayName, role, expiresAt);
+    
+            return new JwtTokenDetails(userId, displayName, expiresAt);
         } catch (ExpiredJwtException ex) {
             throw new InvalidTokenException("Token expired", ex);
         } catch (RuntimeException ex) {

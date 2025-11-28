@@ -10,8 +10,6 @@ import java.util.Optional;
 @Component
 public class CurrentUserProvider {
     
-    private static final String ADMIN_ROLE = "ADMIN";
-    
     public Optional<AuthenticatedUser> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
@@ -30,9 +28,5 @@ public class CurrentUserProvider {
     
     public AuthenticatedUser requireCurrentUser() {
         return getCurrentUser().orElseThrow(() -> new AccessDeniedException("Authentication required"));
-    }
-    
-    public boolean isAdmin(AuthenticatedUser user) {
-        return ADMIN_ROLE.equalsIgnoreCase(user.role());
     }
 }

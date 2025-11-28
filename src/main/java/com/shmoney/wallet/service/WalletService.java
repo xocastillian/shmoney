@@ -57,20 +57,10 @@ public class WalletService {
     }
     
     @Transactional(readOnly = true)
-    public List<Wallet> getAll() {
-        return walletRepository.findAll();
-    }
-
-    @Transactional(readOnly = true)
     public List<CurrencyBalance> getCurrencyBalancesForOwner(Long ownerId) {
         return aggregateBalances(walletRepository.findAllByOwnerId(ownerId));
     }
-
-    @Transactional(readOnly = true)
-    public List<CurrencyBalance> getCurrencyBalancesForAllOwners() {
-        return aggregateBalances(walletRepository.findAll());
-    }
-
+    
     public Wallet update(Wallet wallet,
                          Long ownerId,
                          String currencyCode,
@@ -112,7 +102,7 @@ public class WalletService {
         BigDecimal value = balance == null ? BigDecimal.ZERO : balance;
         return value.setScale(2, RoundingMode.HALF_UP);
     }
-
+    
     private List<CurrencyBalance> aggregateBalances(List<Wallet> wallets) {
         Map<String, BigDecimal> totals = new HashMap<>();
         for (Wallet wallet : wallets) {
@@ -123,13 +113,13 @@ public class WalletService {
             BigDecimal walletBalance = wallet.getBalance() == null ? BigDecimal.ZERO : wallet.getBalance();
             totals.merge(code, walletBalance, BigDecimal::add);
         }
-
+        
         return totals.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .map(entry -> new CurrencyBalance(entry.getKey(), entry.getValue().setScale(2, RoundingMode.HALF_UP)))
                 .toList();
     }
-
+    
     public record CurrencyBalance(String currencyCode, BigDecimal totalBalance) {
     }
 }
