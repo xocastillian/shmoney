@@ -2,6 +2,7 @@ package com.shmoney.transaction.category.entity;
 
 import com.shmoney.category.entity.Category;
 import com.shmoney.category.entity.Subcategory;
+import com.shmoney.common.crypto.EncryptedBigDecimalConverter;
 import com.shmoney.currency.entity.Currency;
 import com.shmoney.user.entity.User;
 import com.shmoney.wallet.entity.Wallet;
@@ -39,7 +40,8 @@ public class CategoryTransaction {
     @Column(name = "type", nullable = false, length = 10)
     private CategoryTransactionType type;
 
-    @Column(name = "amount", nullable = false, precision = 18, scale = 2)
+    @Convert(converter = EncryptedBigDecimalConverter.class)
+    @Column(name = "amount", nullable = false)
     private BigDecimal amount;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

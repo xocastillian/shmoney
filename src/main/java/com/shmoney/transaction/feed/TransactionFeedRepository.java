@@ -1,5 +1,6 @@
 package com.shmoney.transaction.feed;
 
+import com.shmoney.common.crypto.EncryptedBigDecimalConverter;
 import com.shmoney.transaction.category.entity.CategoryTransactionType;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -110,7 +111,7 @@ public class TransactionFeedRepository {
             CategoryTransactionType mappedType = categoryType == null || "TRANSFER".equals(categoryType)
                     ? null
                     : CategoryTransactionType.valueOf(categoryType);
-            BigDecimal amount = rs.getBigDecimal("amount");
+            BigDecimal amount = EncryptedBigDecimalConverter.decryptValue(rs.getString("amount"));
             return new TransactionFeedItem(
                     rs.getLong("entry_id"),
                     entrySource,

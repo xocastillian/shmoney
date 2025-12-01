@@ -1,5 +1,6 @@
 package com.shmoney.wallet.transaction.entity;
 
+import com.shmoney.common.crypto.EncryptedBigDecimalConverter;
 import com.shmoney.currency.entity.Currency;
 import com.shmoney.wallet.entity.Wallet;
 import jakarta.persistence.*;
@@ -31,10 +32,12 @@ public class WalletTransaction {
     @JoinColumn(name = "target_currency_id", nullable = false)
     private Currency targetCurrency;
 
-    @Column(name = "source_amount", nullable = false, precision = 18, scale = 2)
+    @Convert(converter = EncryptedBigDecimalConverter.class)
+    @Column(name = "source_amount", nullable = false)
     private BigDecimal sourceAmount;
 
-    @Column(name = "target_amount", nullable = false, precision = 18, scale = 2)
+    @Convert(converter = EncryptedBigDecimalConverter.class)
+    @Column(name = "target_amount", nullable = false)
     private BigDecimal targetAmount;
 
     @Column(name = "exchange_rate", nullable = false, precision = 18, scale = 6)

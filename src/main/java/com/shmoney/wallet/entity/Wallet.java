@@ -1,5 +1,6 @@
 package com.shmoney.wallet.entity;
 
+import com.shmoney.common.crypto.EncryptedBigDecimalConverter;
 import com.shmoney.currency.entity.Currency;
 import com.shmoney.user.entity.User;
 import jakarta.persistence.*;
@@ -31,7 +32,8 @@ public class Wallet {
     @JoinColumn(name = "currency_id", nullable = false)
     private Currency currency;
 
-    @Column(name = "balance", nullable = false, precision = 18, scale = 2)
+    @Convert(converter = EncryptedBigDecimalConverter.class)
+    @Column(name = "balance", nullable = false)
     private BigDecimal balance;
 
     @Column(name = "color", nullable = false, length = 16)
