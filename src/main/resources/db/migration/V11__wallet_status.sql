@@ -1,0 +1,4 @@
+ALTER TABLE wallets
+    ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE';
+
+UPDATE wallets SET status = 'ACTIVE' WHERE status IS NULL;

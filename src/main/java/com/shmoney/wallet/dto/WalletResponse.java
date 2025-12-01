@@ -1,5 +1,6 @@
 package com.shmoney.wallet.dto;
 
+import com.shmoney.wallet.entity.WalletStatus;
 import com.shmoney.wallet.entity.WalletType;
 import java.time.OffsetDateTime;
 
@@ -10,6 +11,7 @@ public record WalletResponse(
         String currencyCode,
         String color,
         WalletType type,
+        WalletStatus status,
         java.math.BigDecimal balance,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt

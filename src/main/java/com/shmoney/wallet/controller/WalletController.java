@@ -4,6 +4,7 @@ import com.shmoney.auth.security.AuthenticatedUser;
 import com.shmoney.auth.security.CurrentUserProvider;
 import com.shmoney.wallet.dto.*;
 import com.shmoney.wallet.entity.Wallet;
+import com.shmoney.wallet.entity.WalletStatus;
 import com.shmoney.wallet.service.WalletService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -62,12 +63,12 @@ public class WalletController {
     public List<WalletResponse> getAll() {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
         List<Wallet> wallets = walletService.getByOwner(current.id());
-        
+
         return wallets.stream()
                 .map(walletMapper::toResponse)
                 .toList();
     }
-    
+
     @Operation(summary = "Общий баланс по валютам")
     @GetMapping("/balances")
     public List<WalletCurrencyBalanceResponse> getBalancesByCurrency() {
@@ -98,14 +99,14 @@ public class WalletController {
         return walletMapper.toResponse(updated);
     }
     
-    @Operation(summary = "Удалить кошелек")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    @Operation(summary = "Изменить статус кошелька")
+    @PatchMapping("/{id}/status")
+    public WalletResponse updateStatus(@PathVariable Long id,
+                                       @Valid @RequestBody WalletStatusUpdateRequest request) {
         Wallet wallet = walletService.getById(id);
         ensureCanAccess(wallet);
-        walletService.delete(id);
-        
-        return ResponseEntity.noContent().build();
+        Wallet updated = walletService.updateStatus(id, request.status());
+        return walletMapper.toResponse(updated);
     }
     
     private AuthenticatedUser ensureCanAccess(Wallet wallet) {
