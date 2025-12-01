@@ -53,12 +53,12 @@ public class WalletService {
     
     @Transactional(readOnly = true)
     public List<Wallet> getByOwner(Long ownerId) {
-        return walletRepository.findAllByOwnerId(ownerId);
+        return walletRepository.findAllByOwnerIdOrderByIdAsc(ownerId);
     }
-    
+
     @Transactional(readOnly = true)
     public List<CurrencyBalance> getCurrencyBalancesForOwner(Long ownerId) {
-        return aggregateBalances(walletRepository.findAllByOwnerId(ownerId));
+        return aggregateBalances(walletRepository.findAllByOwnerIdOrderByIdAsc(ownerId));
     }
     
     public Wallet update(Wallet wallet,

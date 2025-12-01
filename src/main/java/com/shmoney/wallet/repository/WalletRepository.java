@@ -7,5 +7,5 @@ import java.util.List;
 
 public interface WalletRepository extends JpaRepository<Wallet, Long> {
     
-    List<Wallet> findAllByOwnerId(Long ownerId);
+    List<Wallet> findAllByOwnerIdOrderByIdAsc(Long ownerId);
 }
