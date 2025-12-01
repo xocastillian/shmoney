@@ -5,6 +5,7 @@ import com.shmoney.currency.service.CurrencyService;
 import com.shmoney.user.entity.User;
 import com.shmoney.user.service.UserService;
 import com.shmoney.wallet.entity.Wallet;
+import com.shmoney.wallet.entity.WalletStatus;
 import com.shmoney.wallet.entity.WalletType;
 import com.shmoney.wallet.exception.WalletNotFoundException;
 import com.shmoney.wallet.repository.WalletRepository;
@@ -38,6 +39,7 @@ public class WalletService {
         wallet.setOwner(resolveOwner(ownerId));
         wallet.setCurrency(resolveCurrency(currencyCode));
         wallet.setBalance(normalizeBalance(initialBalance));
+        wallet.setStatus(WalletStatus.ACTIVE);
         
         if (wallet.getType() == null) wallet.setType(WalletType.CASH);
         
@@ -55,10 +57,10 @@ public class WalletService {
     public List<Wallet> getByOwner(Long ownerId) {
         return walletRepository.findAllByOwnerIdOrderByIdAsc(ownerId);
     }
-
+    
     @Transactional(readOnly = true)
     public List<CurrencyBalance> getCurrencyBalancesForOwner(Long ownerId) {
-        return aggregateBalances(walletRepository.findAllByOwnerIdOrderByIdAsc(ownerId));
+        return aggregateBalances(walletRepository.findAllByOwnerIdAndStatusOrderByIdAsc(ownerId, WalletStatus.ACTIVE));
     }
     
     public Wallet update(Wallet wallet,
@@ -84,10 +86,11 @@ public class WalletService {
         return walletRepository.save(wallet);
     }
     
-    public void delete(Long id) {
-        if (!walletRepository.existsById(id)) throw new WalletNotFoundException(id);
-        
-        walletRepository.deleteById(id);
+    public Wallet updateStatus(Long walletId, WalletStatus status) {
+        Wallet wallet = getById(walletId);
+        if (status == null) return wallet;
+        wallet.setStatus(status);
+        return walletRepository.save(wallet);
     }
     
     private User resolveOwner(Long ownerId) {

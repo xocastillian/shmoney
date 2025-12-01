@@ -49,6 +49,10 @@ public class Wallet {
     @Column(name = "type", nullable = false, length = 32)
     private WalletType type;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private WalletStatus status;
+
     @PrePersist
     void onCreate() {
         OffsetDateTime now = OffsetDateTime.now();
@@ -67,6 +71,9 @@ public class Wallet {
         if (type == null) {
             type = DEFAULT_TYPE;
         }
+        if (status == null) {
+            status = WalletStatus.ACTIVE;
+        }
     }
 
     @PreUpdate
@@ -80,6 +87,9 @@ public class Wallet {
         }
         if (type == null) {
             type = DEFAULT_TYPE;
+        }
+        if (status == null) {
+            status = WalletStatus.ACTIVE;
         }
     }
     
@@ -137,6 +147,14 @@ public class Wallet {
 
     public void setType(WalletType type) {
         this.type = type;
+    }
+
+    public WalletStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(WalletStatus status) {
+        this.status = status;
     }
 
     public OffsetDateTime getCreatedAt() {
