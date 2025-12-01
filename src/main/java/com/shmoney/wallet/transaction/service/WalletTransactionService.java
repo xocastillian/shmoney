@@ -59,7 +59,7 @@ public class WalletTransactionService {
         transaction.setTargetAmount(computation.targetAmount());
         transaction.setExchangeRate(computation.rate());
         transaction.setDescription(description);
-        transaction.setExecutedAt(executedAt);
+        transaction.setExecutedAt(enrichExecutedAt(executedAt));
 
         updateBalances(fromWallet, toWallet, computation.sourceAmount(), computation.targetAmount());
 
@@ -124,7 +124,9 @@ public class WalletTransactionService {
             throw new IllegalArgumentException("Amount must be greater than zero");
         }
 
-        OffsetDateTime executedAt = request.executedAt() == null ? transaction.getExecutedAt() : request.executedAt();
+        OffsetDateTime executedAt = request.executedAt() == null
+                ? transaction.getExecutedAt()
+                : enrichExecutedAt(request.executedAt());
         String description = request.description() == null ? transaction.getDescription() : request.description();
 
         revertBalances(transaction.getFromWallet(), transaction.getToWallet(),
@@ -184,5 +186,20 @@ public class WalletTransactionService {
     }
 
     private record AmountComputation(BigDecimal sourceAmount, BigDecimal targetAmount, BigDecimal rate) {
+    }
+
+    private OffsetDateTime enrichExecutedAt(OffsetDateTime executedAt) {
+        if (executedAt == null) {
+            return null;
+        }
+        boolean missingSeconds = executedAt.getSecond() == 0;
+        boolean missingNanos = executedAt.getNano() == 0;
+        if (!missingSeconds && !missingNanos) {
+            return executedAt;
+        }
+        OffsetDateTime now = OffsetDateTime.now();
+        int seconds = missingSeconds ? now.getSecond() : executedAt.getSecond();
+        int nanos = missingNanos ? now.getNano() : executedAt.getNano();
+        return executedAt.withSecond(seconds).withNano(nanos);
     }
 }
