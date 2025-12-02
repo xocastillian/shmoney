@@ -1,5 +1,6 @@
 server {
   listen 80;
+  listen [::]:80;
   server_name ${FRONT_DOMAIN};
 
   location /.well-known/acme-challenge/ {
@@ -41,6 +42,7 @@ server {
 
 server {
   listen 443 ssl;
+  listen [::]:443 ssl;
   http2 on;
   server_name ${FRONT_DOMAIN};
 
