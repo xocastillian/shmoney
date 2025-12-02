@@ -1,6 +1,8 @@
 package com.shmoney.config;
 
 import com.shmoney.auth.exception.TelegramAuthenticationException;
+import com.shmoney.budget.exception.BudgetNotFoundException;
+import com.shmoney.budget.exception.InvalidBudgetException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -27,9 +29,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TelegramAuthenticationException.class)
     public ResponseEntity<Map<String, Object>> handleTelegramAuth(TelegramAuthenticationException ex) {
         log.warn("401 TelegramAuth: {}", ex.getMessage(), ex);
-        
+
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(Map.of("error", "unauthorized", "message", ex.getMessage()));
     }
-}
 
+    @ExceptionHandler(InvalidBudgetException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidBudget(InvalidBudgetException ex) {
+        log.warn("400 InvalidBudget: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "bad_request", "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(BudgetNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleBudgetNotFound(BudgetNotFoundException ex) {
+        log.warn("404 BudgetNotFound: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", "not_found", "message", ex.getMessage()));
+    }
+}
