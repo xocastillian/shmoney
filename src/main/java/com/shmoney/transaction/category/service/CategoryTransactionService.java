@@ -15,6 +15,7 @@ import com.shmoney.transaction.category.repository.CategoryTransactionSpecificat
 import com.shmoney.wallet.entity.Wallet;
 import com.shmoney.wallet.repository.WalletRepository;
 import com.shmoney.wallet.service.WalletService;
+import com.shmoney.budget.service.BudgetSpendingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -39,15 +40,18 @@ public class CategoryTransactionService {
     private final WalletService walletService;
     private final WalletRepository walletRepository;
     private final CategoryService categoryService;
+    private final BudgetSpendingService budgetSpendingService;
     
     public CategoryTransactionService(CategoryTransactionRepository transactionRepository,
                                       WalletService walletService,
                                       WalletRepository walletRepository,
-                                      CategoryService categoryService) {
+                                      CategoryService categoryService,
+                                      BudgetSpendingService budgetSpendingService) {
         this.transactionRepository = transactionRepository;
         this.walletService = walletService;
         this.walletRepository = walletRepository;
         this.categoryService = categoryService;
+        this.budgetSpendingService = budgetSpendingService;
     }
     
     public CategoryTransaction create(AuthenticatedUser currentUser,
@@ -67,6 +71,7 @@ public class CategoryTransactionService {
 
         CategoryTransaction saved = transactionRepository.save(transaction);
         applyBalanceDelta(wallet, request.type(), saved.getAmount());
+        budgetSpendingService.handleTransactionCreated(saved);
         log.info("Category transaction created id={} user={} wallet={} type={} amount={}", saved.getId(),
                 currentUser.id(), wallet.getId(), saved.getType(), saved.getAmount());
         return saved;
@@ -97,6 +102,7 @@ public class CategoryTransactionService {
                                       Long id,
                                       CategoryTransactionUpdateRequest request) {
         CategoryTransaction existing = getOwnedById(currentUser.id(), id);
+        BudgetSpendingService.TransactionSnapshot beforeSnapshot = BudgetSpendingService.TransactionSnapshot.from(existing);
         Wallet originalWallet = existing.getWallet();
         BigDecimal originalAmount = existing.getAmount();
         CategoryTransactionType originalType = existing.getType();
@@ -124,13 +130,16 @@ public class CategoryTransactionService {
         CategoryTransaction saved = transactionRepository.save(existing);
         revertBalanceDelta(originalWallet, originalType, originalAmount);
         applyBalanceDelta(saved.getWallet(), saved.getType(), saved.getAmount());
+        budgetSpendingService.handleTransactionUpdated(beforeSnapshot,
+                BudgetSpendingService.TransactionSnapshot.from(saved));
         log.info("Category transaction updated id={} user={}", saved.getId(), currentUser.id());
         return saved;
     }
-    
+
     public void delete(AuthenticatedUser currentUser, Long id) {
         CategoryTransaction existing = getOwnedById(currentUser.id(), id);
         revertBalanceDelta(existing.getWallet(), existing.getType(), existing.getAmount());
+        budgetSpendingService.handleTransactionDeleted(existing);
         transactionRepository.delete(existing);
         log.info("Category transaction deleted id={} user={}", id, currentUser.id());
     }
