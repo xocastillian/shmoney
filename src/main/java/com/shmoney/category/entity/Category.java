@@ -4,8 +4,6 @@ import com.shmoney.user.entity.User;
 import jakarta.persistence.*;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "categories")
@@ -28,8 +26,9 @@ public class Category {
     @Column(nullable = false, length = 100)
     private String icon;
 
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Subcategory> subcategories = new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private CategoryStatus status;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
@@ -46,6 +45,9 @@ public class Category {
         updatedAt = now;
         normalizeColor();
         normalizeIcon();
+        if (status == null) {
+            status = CategoryStatus.ACTIVE;
+        }
     }
 
     @PreUpdate
@@ -53,6 +55,9 @@ public class Category {
         updatedAt = OffsetDateTime.now();
         normalizeColor();
         normalizeIcon();
+        if (status == null) {
+            status = CategoryStatus.ACTIVE;
+        }
     }
 
     private void normalizeColor() {
@@ -107,12 +112,12 @@ public class Category {
         this.icon = icon;
     }
 
-    public List<Subcategory> getSubcategories() {
-        return subcategories;
+    public CategoryStatus getStatus() {
+        return status;
     }
 
-    public void setSubcategories(List<Subcategory> subcategories) {
-        this.subcategories = subcategories;
+    public void setStatus(CategoryStatus status) {
+        this.status = status;
     }
 
     public OffsetDateTime getCreatedAt() {

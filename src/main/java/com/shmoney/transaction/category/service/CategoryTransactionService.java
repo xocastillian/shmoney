@@ -2,9 +2,7 @@ package com.shmoney.transaction.category.service;
 
 import com.shmoney.auth.security.AuthenticatedUser;
 import com.shmoney.category.entity.Category;
-import com.shmoney.category.entity.Subcategory;
 import com.shmoney.category.service.CategoryService;
-import com.shmoney.category.service.SubcategoryService;
 import com.shmoney.transaction.category.dto.CategoryTransactionCreateRequest;
 import com.shmoney.transaction.category.dto.CategoryTransactionFilter;
 import com.shmoney.transaction.category.dto.CategoryTransactionUpdateRequest;
@@ -41,38 +39,32 @@ public class CategoryTransactionService {
     private final WalletService walletService;
     private final WalletRepository walletRepository;
     private final CategoryService categoryService;
-    private final SubcategoryService subcategoryService;
     
     public CategoryTransactionService(CategoryTransactionRepository transactionRepository,
                                       WalletService walletService,
                                       WalletRepository walletRepository,
-                                      CategoryService categoryService,
-                                      SubcategoryService subcategoryService) {
+                                      CategoryService categoryService) {
         this.transactionRepository = transactionRepository;
         this.walletService = walletService;
         this.walletRepository = walletRepository;
         this.categoryService = categoryService;
-        this.subcategoryService = subcategoryService;
     }
     
     public CategoryTransaction create(AuthenticatedUser currentUser,
                                       CategoryTransactionCreateRequest request) {
         Wallet wallet = requireWalletOwner(currentUser.id(), request.walletId());
         Category category = categoryService.getOwnedCategory(request.categoryId(), currentUser.id());
-        Subcategory subcategory = resolveSubcategory(currentUser.id(), request.subcategoryId(), category);
-        
+
         CategoryTransaction transaction = new CategoryTransaction();
         transaction.setUser(wallet.getOwner());
         transaction.setWallet(wallet);
         transaction.setCategory(category);
-        transaction.setSubcategory(subcategory);
         transaction.setType(request.type());
         transaction.setAmount(normalize(request.amount()));
         transaction.setCurrency(wallet.getCurrency());
         transaction.setDescription(request.description());
         transaction.setOccurredAt(enrichOccurredAt(request.occurredAt()));
-        validateCategorySelection(transaction.getCategory(), transaction.getSubcategory());
-        
+
         CategoryTransaction saved = transactionRepository.save(transaction);
         applyBalanceDelta(wallet, request.type(), saved.getAmount());
         log.info("Category transaction created id={} user={} wallet={} type={} amount={}", saved.getId(),
@@ -88,7 +80,6 @@ public class CategoryTransactionService {
                 .where(CategoryTransactionSpecifications.belongsToUser(userId))
                 .and(CategoryTransactionSpecifications.hasWallet(filter.walletId()))
                 .and(CategoryTransactionSpecifications.hasCategory(filter.categoryId()))
-                .and(CategoryTransactionSpecifications.hasSubcategory(filter.subcategoryId()))
                 .and(CategoryTransactionSpecifications.hasType(filter.type()))
                 .and(CategoryTransactionSpecifications.occurredAfter(filter.from()))
                 .and(CategoryTransactionSpecifications.occurredBefore(filter.to()));
@@ -112,8 +103,7 @@ public class CategoryTransactionService {
         
         Wallet targetWallet = resolveWalletUpdate(currentUser, request.walletId(), existing);
         Category category = resolveCategoryUpdate(currentUser, request.categoryId(), existing);
-        Subcategory subcategory = resolveSubcategoryUpdate(currentUser, request.subcategoryId(), category, existing);
-        
+
         if (request.type() != null) {
             existing.setType(request.type());
         }
@@ -129,11 +119,8 @@ public class CategoryTransactionService {
         existing.setWallet(targetWallet);
         existing.setUser(targetWallet.getOwner());
         existing.setCategory(category);
-        existing.setSubcategory(subcategory);
         existing.setCurrency(targetWallet.getCurrency());
-        
-        validateCategorySelection(existing.getCategory(), existing.getSubcategory());
-        
+
         CategoryTransaction saved = transactionRepository.save(existing);
         revertBalanceDelta(originalWallet, originalType, originalAmount);
         applyBalanceDelta(saved.getWallet(), saved.getType(), saved.getAmount());
@@ -156,17 +143,6 @@ public class CategoryTransactionService {
         return wallet;
     }
     
-    private Subcategory resolveSubcategory(Long userId, Long subcategoryId, Category category) {
-        if (subcategoryId == null) {
-            return null;
-        }
-        Subcategory subcategory = subcategoryService.getOwnedSubcategory(userId, subcategoryId);
-        if (!subcategory.getCategory().getId().equals(category.getId())) {
-            throw new InvalidCategoryTransactionException("Subcategory does not belong to specified category");
-        }
-        return subcategory;
-    }
-    
     private Wallet resolveWalletUpdate(AuthenticatedUser currentUser, Long walletId,
                                        CategoryTransaction existing) {
         if (walletId == null) {
@@ -181,16 +157,6 @@ public class CategoryTransactionService {
             return existing.getCategory();
         }
         return categoryService.getOwnedCategory(categoryId, currentUser.id());
-    }
-    
-    private Subcategory resolveSubcategoryUpdate(AuthenticatedUser currentUser,
-                                                 Long subcategoryId,
-                                                 Category category,
-                                                 CategoryTransaction existing) {
-        if (subcategoryId == null) {
-            return category.equals(existing.getCategory()) ? existing.getSubcategory() : null;
-        }
-        return resolveSubcategory(currentUser.id(), subcategoryId, category);
     }
     
     private void applyBalanceDelta(Wallet wallet, CategoryTransactionType type, BigDecimal amount) {
@@ -218,15 +184,6 @@ public class CategoryTransactionService {
         BigDecimal updated = currentBalance.add(delta);
         wallet.setBalance(updated);
         walletRepository.save(wallet);
-    }
-    
-    private void validateCategorySelection(Category category, Subcategory subcategory) {
-        if (category == null) {
-            throw new InvalidCategoryTransactionException("Category must be provided");
-        }
-        if (subcategory != null && !subcategory.getCategory().getId().equals(category.getId())) {
-            throw new InvalidCategoryTransactionException("Subcategory does not belong to category");
-        }
     }
     
     private BigDecimal normalize(BigDecimal value) {

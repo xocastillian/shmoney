@@ -3,9 +3,7 @@ package com.shmoney.category.controller;
 import com.shmoney.auth.security.AuthenticatedUser;
 import com.shmoney.auth.security.CurrentUserProvider;
 import com.shmoney.category.dto.CategoryCreateRequest;
-import com.shmoney.category.dto.CategoryMapper;
-import com.shmoney.category.dto.CategoryResponse;
-import com.shmoney.category.dto.CategoryUpdateRequest;
+import com.shmoney.category.dto.*;
 import com.shmoney.category.entity.Category;
 import com.shmoney.category.service.CategoryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -77,12 +75,13 @@ public class CategoryController {
         return categoryMapper.toResponse(updated);
     }
 
-    @Operation(summary = "Удалить категорию")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    @Operation(summary = "Изменить статус категории")
+    @PatchMapping("/{id}/status")
+    public CategoryResponse updateStatus(@PathVariable Long id,
+                                         @Valid @RequestBody CategoryStatusUpdateRequest request) {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
         Category existing = categoryService.getOwnedCategory(id, current.id());
-        categoryService.delete(existing);
-        return ResponseEntity.noContent().build();
+        Category updated = categoryService.updateStatus(existing, request.status());
+        return categoryMapper.toResponse(updated);
     }
 }

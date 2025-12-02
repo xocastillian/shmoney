@@ -12,7 +12,6 @@ import java.time.OffsetDateTime;
 public record CategoryTransactionUpdateRequest(
         @Positive Long walletId,
         Long categoryId,
-        Long subcategoryId,
         CategoryTransactionType type,
         @DecimalMin(value = "0.00", inclusive = false) BigDecimal amount,
         @PastOrPresent OffsetDateTime occurredAt,

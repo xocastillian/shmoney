@@ -11,8 +11,6 @@ public record CategoryTransactionResponse(
         String walletName,
         Long categoryId,
         String categoryName,
-        Long subcategoryId,
-        String subcategoryName,
         CategoryTransactionType type,
         BigDecimal amount,
         String currencyCode,

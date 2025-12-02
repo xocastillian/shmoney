@@ -7,7 +7,6 @@ import java.time.OffsetDateTime;
 public record CategoryTransactionFilter(
         Long walletId,
         Long categoryId,
-        Long subcategoryId,
         CategoryTransactionType type,
         OffsetDateTime from,
         OffsetDateTime to

@@ -54,7 +54,6 @@ public class CategoryTransactionController {
                                                           @RequestParam(defaultValue = "50") int size,
                                                           @RequestParam(required = false) Long walletId,
                                                           @RequestParam(required = false) Long categoryId,
-                                                          @RequestParam(required = false) Long subcategoryId,
                                                           @RequestParam(required = false) CategoryTransactionType type,
                                                           @RequestParam(required = false)
                                                           @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
@@ -63,7 +62,7 @@ public class CategoryTransactionController {
                                                           @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
                                                           OffsetDateTime to) {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
-        CategoryTransactionFilter filter = new CategoryTransactionFilter(walletId, categoryId, subcategoryId, type, from, to);
+        CategoryTransactionFilter filter = new CategoryTransactionFilter(walletId, categoryId, type, from, to);
         Pageable pageable = transactionService.buildPageable(page, size);
         Page<CategoryTransaction> resultPage = transactionService.getPage(current.id(), filter, pageable);
         List<CategoryTransactionResponse> responses = resultPage.getContent().stream()
