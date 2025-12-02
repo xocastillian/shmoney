@@ -20,7 +20,6 @@ public class TransactionFeedService {
                                                      TransactionFeedType type,
                                                      Long walletId,
                                                      Long categoryId,
-                                                     Long subcategoryId,
                                                      OffsetDateTime from,
                                                      OffsetDateTime to,
                                                      TransactionFeedPeriod period,
@@ -36,7 +35,7 @@ public class TransactionFeedService {
         }
         
         TransactionFeedRepository.PagedFeedResult result = repository.fetch(userId, type, walletId, categoryId,
-                subcategoryId, fromDate, toDate, page, size);
+                fromDate, toDate, page, size);
         return PageResponse.of(result.totalCount(), result.page(), result.size(), result.items());
     }
 }

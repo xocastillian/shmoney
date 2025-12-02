@@ -27,12 +27,6 @@ public final class CategoryTransactionSpecifications {
                 : (root, query, cb) -> cb.equal(root.get("category").get("id"), categoryId);
     }
 
-    public static Specification<CategoryTransaction> hasSubcategory(Long subcategoryId) {
-        return subcategoryId == null
-                ? null
-                : (root, query, cb) -> cb.equal(root.get("subcategory").get("id"), subcategoryId);
-    }
-
     public static Specification<CategoryTransaction> hasType(CategoryTransactionType type) {
         return type == null
                 ? null

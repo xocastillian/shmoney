@@ -1,7 +1,6 @@
 package com.shmoney.transaction.category.entity;
 
 import com.shmoney.category.entity.Category;
-import com.shmoney.category.entity.Subcategory;
 import com.shmoney.common.crypto.EncryptedBigDecimalConverter;
 import com.shmoney.currency.entity.Currency;
 import com.shmoney.user.entity.User;
@@ -31,10 +30,6 @@ public class CategoryTransaction {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "subcategory_id")
-    private Subcategory subcategory;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false, length = 10)
@@ -120,14 +115,6 @@ public class CategoryTransaction {
 
     public void setCategory(Category category) {
         this.category = category;
-    }
-
-    public Subcategory getSubcategory() {
-        return subcategory;
-    }
-
-    public void setSubcategory(Subcategory subcategory) {
-        this.subcategory = subcategory;
     }
 
     public CategoryTransactionType getType() {

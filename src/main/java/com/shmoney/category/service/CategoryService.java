@@ -1,7 +1,7 @@
 package com.shmoney.category.service;
 
 import com.shmoney.category.entity.Category;
-import com.shmoney.category.entity.Subcategory;
+import com.shmoney.category.entity.CategoryStatus;
 import com.shmoney.category.exception.CategoryNotFoundException;
 import com.shmoney.category.repository.CategoryRepository;
 import com.shmoney.user.entity.User;
@@ -26,7 +26,7 @@ public class CategoryService {
     public Category create(Long ownerId, Category category) {
         User owner = userService.getById(ownerId);
         category.setOwner(owner);
-        attachSubcategories(category);
+        category.setStatus(CategoryStatus.ACTIVE);
         return categoryRepository.save(category);
     }
 
@@ -42,21 +42,14 @@ public class CategoryService {
     }
 
     public Category update(Category category) {
-        attachSubcategories(category);
         return categoryRepository.save(category);
     }
 
-    public void delete(Category category) {
-        categoryRepository.delete(category);
-    }
-
-    private void attachSubcategories(Category category) {
-        if (category.getSubcategories() == null) {
-            category.setSubcategories(new java.util.ArrayList<>());
-            return;
+    public Category updateStatus(Category category, CategoryStatus status) {
+        if (status == null) {
+            return category;
         }
-        for (Subcategory subcategory : category.getSubcategories()) {
-            subcategory.setCategory(category);
-        }
+        category.setStatus(status);
+        return categoryRepository.save(category);
     }
 }

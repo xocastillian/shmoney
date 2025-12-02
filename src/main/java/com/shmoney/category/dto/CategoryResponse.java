@@ -1,15 +1,16 @@
 package com.shmoney.category.dto;
 
+import com.shmoney.category.entity.CategoryStatus;
+
 import java.time.OffsetDateTime;
-import java.util.List;
 
 public record CategoryResponse(
         Long id,
         String name,
         String color,
         String icon,
+        CategoryStatus status,
         OffsetDateTime createdAt,
-        OffsetDateTime updatedAt,
-        List<SubcategoryResponse> subcategories
+        OffsetDateTime updatedAt
 ) {
 }

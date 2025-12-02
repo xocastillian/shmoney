@@ -10,7 +10,6 @@ public interface CategoryTransactionMapper {
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "wallet", ignore = true)
     @Mapping(target = "category", ignore = true)
-    @Mapping(target = "subcategory", ignore = true)
     @Mapping(target = "currency", ignore = true)
     void updateEntity(CategoryTransactionUpdateRequest request, @MappingTarget CategoryTransaction transaction);
 
@@ -18,8 +17,6 @@ public interface CategoryTransactionMapper {
     @Mapping(target = "walletName", source = "wallet.name")
     @Mapping(target = "categoryId", source = "category.id")
     @Mapping(target = "categoryName", source = "category.name")
-    @Mapping(target = "subcategoryId", source = "subcategory.id")
-    @Mapping(target = "subcategoryName", source = "subcategory.name")
     @Mapping(target = "currencyCode", source = "currency.code")
     CategoryTransactionResponse toResponse(CategoryTransaction transaction);
 }

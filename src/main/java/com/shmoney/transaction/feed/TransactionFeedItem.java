@@ -12,7 +12,6 @@ public record TransactionFeedItem(
         Long walletId,
         Long counterpartyWalletId,
         Long categoryId,
-        Long subcategoryId,
         BigDecimal amount,
         String currencyCode,
         String description,

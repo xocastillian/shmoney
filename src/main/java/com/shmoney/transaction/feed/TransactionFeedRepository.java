@@ -28,7 +28,6 @@ public class TransactionFeedRepository {
                 ))
               AND ((:walletId)::BIGINT IS NULL OR (:walletId)::BIGINT = ANY(wallet_ids))
               AND ((:categoryId)::BIGINT IS NULL OR (entry_source = 'CATEGORY' AND category_id = (:categoryId)::BIGINT))
-              AND ((:subcategoryId)::BIGINT IS NULL OR (entry_source = 'CATEGORY' AND subcategory_id = (:subcategoryId)::BIGINT))
               AND ((:fromDate)::TIMESTAMPTZ IS NULL OR occurred_at >= (:fromDate)::TIMESTAMPTZ)
               AND ((:toDate)::TIMESTAMPTZ IS NULL OR occurred_at <= (:toDate)::TIMESTAMPTZ)
             """;
@@ -40,7 +39,6 @@ public class TransactionFeedRepository {
                    wallet_id,
                    counterparty_wallet_id,
                    category_id,
-                   subcategory_id,
                    amount,
                    currency_code,
                    description,
@@ -63,7 +61,6 @@ public class TransactionFeedRepository {
                                  TransactionFeedType type,
                                  Long walletId,
                                  Long categoryId,
-                                 Long subcategoryId,
                                  OffsetDateTime from,
                                  OffsetDateTime to,
                                  int page,
@@ -72,7 +69,7 @@ public class TransactionFeedRepository {
         int currentPage = Math.max(page, 0);
         int offset = currentPage * limit;
 
-        MapSqlParameterSource params = buildParams(userId, type, walletId, categoryId, subcategoryId, from, to)
+        MapSqlParameterSource params = buildParams(userId, type, walletId, categoryId, from, to)
                 .addValue("offset", offset)
                 .addValue("limit", limit);
 
@@ -86,7 +83,6 @@ public class TransactionFeedRepository {
                                               TransactionFeedType type,
                                               Long walletId,
                                               Long categoryId,
-                                              Long subcategoryId,
                                               OffsetDateTime from,
                                               OffsetDateTime to) {
         return new MapSqlParameterSource()
@@ -94,7 +90,6 @@ public class TransactionFeedRepository {
                 .addValue("type", type == null ? "ALL" : type.name(), Types.VARCHAR)
                 .addValue("walletId", walletId, Types.BIGINT)
                 .addValue("categoryId", categoryId, Types.BIGINT)
-                .addValue("subcategoryId", subcategoryId, Types.BIGINT)
                 .addValue("fromDate", toTimestamp(from), Types.TIMESTAMP)
                 .addValue("toDate", toTimestamp(to), Types.TIMESTAMP);
     }
@@ -119,7 +114,6 @@ public class TransactionFeedRepository {
                     rs.getObject("wallet_id", Long.class),
                     rs.getObject("counterparty_wallet_id", Long.class),
                     rs.getObject("category_id", Long.class),
-                    rs.getObject("subcategory_id", Long.class),
                     amount,
                     rs.getString("currency_code"),
                     rs.getString("description"),

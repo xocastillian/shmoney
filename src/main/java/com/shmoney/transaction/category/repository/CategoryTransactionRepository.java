@@ -10,6 +10,6 @@ import java.util.Optional;
 public interface CategoryTransactionRepository extends JpaRepository<CategoryTransaction, Long>,
         JpaSpecificationExecutor<CategoryTransaction> {
 
-    @EntityGraph(attributePaths = {"wallet", "category", "subcategory", "currency"})
+    @EntityGraph(attributePaths = {"wallet", "category", "currency"})
     Optional<CategoryTransaction> findByIdAndUserId(Long id, Long userId);
 }
