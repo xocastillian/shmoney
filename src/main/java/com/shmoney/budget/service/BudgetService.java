@@ -53,7 +53,6 @@ public class BudgetService {
     }
 
     public BudgetResponse create(Long ownerId, BudgetCreateRequest request) {
-        validateRecurringCustom(request.periodType(), request.budgetType());
         User owner = userService.getById(ownerId);
         Set<Category> categories = loadCategories(ownerId, request.categoryIds());
         if (categories.isEmpty()) {
@@ -114,8 +113,6 @@ public class BudgetService {
             budget.setName(request.name().trim());
         }
         if (request.budgetType() != null) {
-            validateRecurringCustom(request.periodType() == null ? budget.getPeriodType() : request.periodType(),
-                    request.budgetType());
             budget.setBudgetType(request.budgetType());
         }
 
@@ -176,20 +173,33 @@ public class BudgetService {
                 now);
         for (Budget budget : overdue) {
             closeBudget(budget, now);
-            if (budget.getBudgetType() == BudgetType.RECURRING && budget.getPeriodType() != BudgetPeriodType.CUSTOM) {
+            if (budget.getBudgetType() == BudgetType.RECURRING) {
                 createNextBudget(budget);
             }
         }
     }
 
     private void createNextBudget(Budget closedBudget) {
-        var range = periodCalculator.nextRange(closedBudget.getPeriodType(), closedBudget.getPeriodStart());
         Budget next = new Budget();
         next.setOwner(closedBudget.getOwner());
         next.setName(closedBudget.getName());
         next.setPeriodType(closedBudget.getPeriodType());
-        next.setPeriodStart(range.start());
-        next.setPeriodEnd(range.end());
+        if (closedBudget.getPeriodType() == BudgetPeriodType.CUSTOM) {
+            OffsetDateTime start = closedBudget.getPeriodStart();
+            OffsetDateTime end = closedBudget.getPeriodEnd();
+            if (start == null || end == null || !end.isAfter(start)) {
+                throw new InvalidBudgetException("Некорректный период кастомного бюджета");
+            }
+            java.time.Duration duration = java.time.Duration.between(start, end);
+            OffsetDateTime nextStart = end.plusSeconds(1);
+            OffsetDateTime nextEnd = nextStart.plus(duration);
+            next.setPeriodStart(nextStart);
+            next.setPeriodEnd(nextEnd);
+        } else {
+            var range = periodCalculator.nextRange(closedBudget.getPeriodType(), closedBudget.getPeriodStart());
+            next.setPeriodStart(range.start());
+            next.setPeriodEnd(range.end());
+        }
         next.setBudgetType(closedBudget.getBudgetType());
         next.setCurrencyCode(closedBudget.getCurrencyCode());
         next.setAmountLimit(closedBudget.getAmountLimit());
@@ -234,12 +244,6 @@ public class BudgetService {
             query.distinct(true);
             return predicate;
         };
-    }
-
-    private void validateRecurringCustom(BudgetPeriodType periodType, BudgetType budgetType) {
-        if (budgetType == BudgetType.RECURRING && periodType == BudgetPeriodType.CUSTOM) {
-            throw new InvalidBudgetException("Нельзя создать повторяющийся бюджет с кастомным периодом");
-        }
     }
 
     private int periodOrder(BudgetPeriodType type) {

@@ -60,8 +60,8 @@ public class BudgetPeriodCalculator {
         if (start == null || end == null) {
             throw new InvalidBudgetException("Для кастомного периода нужно указать даты начала и конца");
         }
-        if (end.isBefore(start)) {
-            throw new InvalidBudgetException("Дата окончания не может быть раньше даты начала");
+        if (!end.isAfter(start)) {
+            throw new InvalidBudgetException("Дата окончания должна быть позже даты начала");
         }
         return new PeriodRange(start, end);
     }
