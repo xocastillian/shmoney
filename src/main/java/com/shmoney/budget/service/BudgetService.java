@@ -167,6 +167,12 @@ public class BudgetService {
         return toResponse(budget);
     }
 
+    public void delete(Long ownerId, Long budgetId) {
+        Budget budget = budgetRepository.findByIdAndOwnerId(budgetId, ownerId)
+                .orElseThrow(() -> new BudgetNotFoundException(budgetId));
+        budgetRepository.delete(budget);
+    }
+
     public void refreshBudgets(Long ownerId) {
         OffsetDateTime now = OffsetDateTime.now();
         List<Budget> overdue = budgetRepository.findAllByOwnerIdAndStatusAndPeriodEndBefore(ownerId,
@@ -234,6 +240,12 @@ public class BudgetService {
             if (filter != null) {
                 if (filter.status() != null) {
                     predicate = cb.and(predicate, cb.equal(root.get("status"), filter.status()));
+                }
+                if (filter.periodType() != null) {
+                    predicate = cb.and(predicate, cb.equal(root.get("periodType"), filter.periodType()));
+                }
+                if (filter.budgetType() != null) {
+                    predicate = cb.and(predicate, cb.equal(root.get("budgetType"), filter.budgetType()));
                 }
                 if (filter.from() != null) {
                     predicate = cb.and(predicate, cb.greaterThanOrEqualTo(root.get("periodEnd"), filter.from()));

@@ -6,7 +6,9 @@ import com.shmoney.budget.dto.BudgetCreateRequest;
 import com.shmoney.budget.dto.BudgetFilter;
 import com.shmoney.budget.dto.BudgetResponse;
 import com.shmoney.budget.dto.BudgetUpdateRequest;
+import com.shmoney.budget.entity.BudgetPeriodType;
 import com.shmoney.budget.entity.BudgetStatus;
+import com.shmoney.budget.entity.BudgetType;
 import com.shmoney.budget.service.BudgetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -41,12 +43,14 @@ public class BudgetController {
     @Operation(summary = "Список бюджетов")
     @GetMapping
     public List<BudgetResponse> list(@RequestParam(required = false) BudgetStatus status,
+                                     @RequestParam(required = false) BudgetPeriodType periodType,
+                                     @RequestParam(required = false) BudgetType budgetType,
                                      @RequestParam(required = false)
                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime from,
                                      @RequestParam(required = false)
                                      @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime to) {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
-        BudgetFilter filter = new BudgetFilter(status, from, to);
+        BudgetFilter filter = new BudgetFilter(status, periodType, budgetType, from, to);
         return budgetService.list(current.id(), filter);
     }
 
@@ -70,5 +74,12 @@ public class BudgetController {
     public BudgetResponse close(@PathVariable Long id) {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
         return budgetService.close(current.id(), id);
+    }
+
+    @Operation(summary = "Удалить бюджет")
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        AuthenticatedUser current = currentUserProvider.requireCurrentUser();
+        budgetService.delete(current.id(), id);
     }
 }
