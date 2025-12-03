@@ -76,6 +76,7 @@ public class BudgetService {
         budget.setCategories(categories);
 
         Budget saved = budgetRepository.save(budget);
+        budgetSpendingService.recalculate(saved);
         return toResponse(saved);
     }
 
@@ -88,7 +89,7 @@ public class BudgetService {
                     if (typeOrder != 0) {
                         return typeOrder;
                     }
-                    return a.getPeriodStart().compareTo(b.getPeriodStart());
+                    return a.getCreatedAt().compareTo(b.getCreatedAt());
                 })
                 .map(this::toResponse)
                 .toList();
@@ -166,6 +167,24 @@ public class BudgetService {
         return toResponse(budget);
     }
 
+    public void delete(Long ownerId, Long budgetId) {
+        Budget budget = budgetRepository.findByIdAndOwnerId(budgetId, ownerId)
+                .orElseThrow(() -> new BudgetNotFoundException(budgetId));
+        budgetRepository.delete(budget);
+    }
+
+    public BudgetResponse open(Long ownerId, Long budgetId) {
+        Budget budget = budgetRepository.findByIdAndOwnerId(budgetId, ownerId)
+                .orElseThrow(() -> new BudgetNotFoundException(budgetId));
+        if (budget.getStatus() == BudgetStatus.ACTIVE) {
+            return toResponse(budget);
+        }
+        budget.setStatus(BudgetStatus.ACTIVE);
+        budget.setClosedAt(null);
+        budgetRepository.save(budget);
+        return toResponse(budget);
+    }
+
     public void refreshBudgets(Long ownerId) {
         OffsetDateTime now = OffsetDateTime.now();
         List<Budget> overdue = budgetRepository.findAllByOwnerIdAndStatusAndPeriodEndBefore(ownerId,
@@ -233,6 +252,12 @@ public class BudgetService {
             if (filter != null) {
                 if (filter.status() != null) {
                     predicate = cb.and(predicate, cb.equal(root.get("status"), filter.status()));
+                }
+                if (filter.periodType() != null) {
+                    predicate = cb.and(predicate, cb.equal(root.get("periodType"), filter.periodType()));
+                }
+                if (filter.budgetType() != null) {
+                    predicate = cb.and(predicate, cb.equal(root.get("budgetType"), filter.budgetType()));
                 }
                 if (filter.from() != null) {
                     predicate = cb.and(predicate, cb.greaterThanOrEqualTo(root.get("periodEnd"), filter.from()));
