@@ -76,6 +76,13 @@ public class BudgetController {
         return budgetService.close(current.id(), id);
     }
 
+    @Operation(summary = "Открыть бюджет")
+    @PostMapping("/{id}/open")
+    public BudgetResponse open(@PathVariable Long id) {
+        AuthenticatedUser current = currentUserProvider.requireCurrentUser();
+        return budgetService.open(current.id(), id);
+    }
+
     @Operation(summary = "Удалить бюджет")
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {

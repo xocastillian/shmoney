@@ -173,6 +173,18 @@ public class BudgetService {
         budgetRepository.delete(budget);
     }
 
+    public BudgetResponse open(Long ownerId, Long budgetId) {
+        Budget budget = budgetRepository.findByIdAndOwnerId(budgetId, ownerId)
+                .orElseThrow(() -> new BudgetNotFoundException(budgetId));
+        if (budget.getStatus() == BudgetStatus.ACTIVE) {
+            return toResponse(budget);
+        }
+        budget.setStatus(BudgetStatus.ACTIVE);
+        budget.setClosedAt(null);
+        budgetRepository.save(budget);
+        return toResponse(budget);
+    }
+
     public void refreshBudgets(Long ownerId) {
         OffsetDateTime now = OffsetDateTime.now();
         List<Budget> overdue = budgetRepository.findAllByOwnerIdAndStatusAndPeriodEndBefore(ownerId,
