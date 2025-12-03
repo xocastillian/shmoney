@@ -76,6 +76,7 @@ public class BudgetService {
         budget.setCategories(categories);
 
         Budget saved = budgetRepository.save(budget);
+        budgetSpendingService.recalculate(saved);
         return toResponse(saved);
     }
 
@@ -88,7 +89,7 @@ public class BudgetService {
                     if (typeOrder != 0) {
                         return typeOrder;
                     }
-                    return a.getPeriodStart().compareTo(b.getPeriodStart());
+                    return a.getCreatedAt().compareTo(b.getCreatedAt());
                 })
                 .map(this::toResponse)
                 .toList();
