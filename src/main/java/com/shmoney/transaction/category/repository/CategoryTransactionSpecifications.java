@@ -5,6 +5,7 @@ import com.shmoney.transaction.category.entity.CategoryTransactionType;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.OffsetDateTime;
+import java.util.Collection;
 
 public final class CategoryTransactionSpecifications {
 
@@ -25,6 +26,12 @@ public final class CategoryTransactionSpecifications {
         return categoryId == null
                 ? null
                 : (root, query, cb) -> cb.equal(root.get("category").get("id"), categoryId);
+    }
+
+    public static Specification<CategoryTransaction> hasCategories(Collection<Long> categoryIds) {
+        return categoryIds == null || categoryIds.isEmpty()
+                ? null
+                : (root, query, cb) -> root.get("category").get("id").in(categoryIds);
     }
 
     public static Specification<CategoryTransaction> hasType(CategoryTransactionType type) {

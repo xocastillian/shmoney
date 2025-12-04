@@ -1,5 +1,6 @@
 package com.shmoney.settings.service;
 
+import com.shmoney.analytics.service.AnalyticsService;
 import com.shmoney.currency.entity.Currency;
 import com.shmoney.currency.service.CurrencyService;
 import com.shmoney.settings.ApplicationLanguage;
@@ -29,19 +30,23 @@ public class SettingsService {
             .collect(java.util.stream.Collectors.toUnmodifiableMap(lang -> lang.code().toLowerCase(Locale.ROOT),
                     lang -> lang));
     
-    private static final ApplicationLanguage DEFAULT_LANGUAGE = ApplicationLanguage.RU;
-    private static final String DEFAULT_MAIN_CURRENCY = "KZT";
-
     private final AppSettingsRepository appSettingsRepository;
     private final CurrencyService currencyService;
+    private final AppSettingsProvider appSettingsProvider;
+    private final AnalyticsService analyticsService;
 
-    public SettingsService(AppSettingsRepository appSettingsRepository, CurrencyService currencyService) {
+    public SettingsService(AppSettingsRepository appSettingsRepository,
+                           CurrencyService currencyService,
+                           AppSettingsProvider appSettingsProvider,
+                           AnalyticsService analyticsService) {
         this.appSettingsRepository = appSettingsRepository;
         this.currencyService = currencyService;
+        this.appSettingsProvider = appSettingsProvider;
+        this.analyticsService = analyticsService;
     }
 
     public AppSettingsResponse getSettings() {
-        AppSettings settings = getOrCreateSettings();
+        AppSettings settings = appSettingsProvider.getOrCreate();
         return buildResponse(settings);
     }
 
@@ -52,19 +57,24 @@ public class SettingsService {
                     "Нужно указать язык или основную валюту");
         }
 
-        AppSettings settings = getOrCreateSettings();
+        AppSettings settings = appSettingsProvider.getOrCreate();
+        String previousCurrency = settings.getMainCurrency();
 
         if (StringUtils.hasText(request.language())) {
             ApplicationLanguage language = resolveLanguage(request.language());
             settings.setDefaultLanguage(language.code());
         }
 
+        String newCurrency = previousCurrency;
         if (StringUtils.hasText(request.mainCurrency())) {
-            String currency = resolveCurrency(request.mainCurrency());
-            settings.setMainCurrency(currency);
+            newCurrency = resolveCurrency(request.mainCurrency());
+            settings.setMainCurrency(newCurrency);
         }
 
         appSettingsRepository.save(settings);
+        if (previousCurrency != null && !previousCurrency.equalsIgnoreCase(newCurrency)) {
+            analyticsService.recalculateAllSummaries(newCurrency);
+        }
         return buildResponse(settings);
     }
 
@@ -75,18 +85,6 @@ public class SettingsService {
                 SUPPORTED_LANGUAGES.stream().map(ApplicationLanguage::code).toList(),
                 getSupportedCurrencies()
         );
-    }
-
-    private AppSettings getOrCreateSettings() {
-        return appSettingsRepository.findTopByOrderByIdAsc()
-                .orElseGet(this::createDefaultSettings);
-    }
-    
-    private AppSettings createDefaultSettings() {
-        AppSettings settings = new AppSettings();
-        settings.setDefaultLanguage(DEFAULT_LANGUAGE.code());
-        settings.setMainCurrency(DEFAULT_MAIN_CURRENCY);
-        return appSettingsRepository.save(settings);
     }
 
     private ApplicationLanguage resolveLanguage(String code) {

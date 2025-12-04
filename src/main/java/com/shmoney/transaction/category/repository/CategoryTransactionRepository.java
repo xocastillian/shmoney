@@ -4,6 +4,8 @@ import com.shmoney.transaction.category.entity.CategoryTransaction;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.OffsetDateTime;
 import java.util.Collection;
@@ -20,4 +22,9 @@ public interface CategoryTransactionRepository extends JpaRepository<CategoryTra
                                                                                            Collection<Long> categoryIds,
                                                                                            OffsetDateTime from,
                                                                                            OffsetDateTime to);
+
+    @Query("SELECT DISTINCT ct.user.id FROM CategoryTransaction ct " +
+            "WHERE ct.occurredAt BETWEEN :from AND :to")
+    java.util.List<Long> findDistinctUserIdsByOccurredAtBetween(@Param("from") OffsetDateTime from,
+                                                                @Param("to") OffsetDateTime to);
 }
