@@ -34,6 +34,6 @@ public class SettingsController {
     @Operation(summary = "Обновить настройки приложения")
     @PatchMapping
     public AppSettingsResponse updateSettings(@Valid @RequestBody UpdateAppSettingsRequest request) {
-        return settingsService.updateLanguage(request.language());
+        return settingsService.updateSettings(request);
     }
 }

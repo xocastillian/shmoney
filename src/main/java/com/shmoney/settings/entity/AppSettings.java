@@ -12,8 +12,14 @@ public class AppSettings {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private static final String DEFAULT_LANGUAGE = "ru";
+    private static final String DEFAULT_MAIN_CURRENCY = "KZT";
+
     @Column(name = "default_language", nullable = false, length = 8)
     private String defaultLanguage;
+
+    @Column(name = "main_currency", nullable = false, length = 10)
+    private String mainCurrency;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
@@ -28,6 +34,12 @@ public class AppSettings {
             createdAt = now;
         }
         updatedAt = now;
+        if (defaultLanguage == null || defaultLanguage.isBlank()) {
+            defaultLanguage = DEFAULT_LANGUAGE;
+        }
+        if (mainCurrency == null || mainCurrency.isBlank()) {
+            mainCurrency = DEFAULT_MAIN_CURRENCY;
+        }
     }
 
     @PreUpdate
@@ -49,6 +61,14 @@ public class AppSettings {
 
     public void setDefaultLanguage(String defaultLanguage) {
         this.defaultLanguage = defaultLanguage;
+    }
+
+    public String getMainCurrency() {
+        return mainCurrency;
+    }
+
+    public void setMainCurrency(String mainCurrency) {
+        this.mainCurrency = mainCurrency;
     }
 
     public OffsetDateTime getCreatedAt() {
