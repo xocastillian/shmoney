@@ -4,6 +4,8 @@ import java.util.List;
 
 public record AppSettingsResponse(
         String defaultLanguage,
-        List<String> supportedLanguages
+        String mainCurrency,
+        List<String> supportedLanguages,
+        List<String> supportedCurrencies
 ) {
 }
