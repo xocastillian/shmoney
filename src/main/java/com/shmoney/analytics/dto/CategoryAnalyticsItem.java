@@ -6,6 +6,7 @@ public record CategoryAnalyticsItem(
         Long categoryId,
         String categoryName,
         String categoryColor,
+        String categoryIcon,
         BigDecimal amount,
         BigDecimal percent,
         long transactionCount
