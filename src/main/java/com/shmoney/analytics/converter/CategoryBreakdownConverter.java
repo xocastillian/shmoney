@@ -28,6 +28,7 @@ public class CategoryBreakdownConverter implements AttributeConverter<List<Categ
                         entry.categoryId(),
                         entry.categoryName(),
                         entry.categoryColor(),
+                        entry.categoryIcon(),
                         EncryptedBigDecimalConverter.encryptValue(entry.amount()),
                         entry.transactionCount()
                 ))
@@ -52,6 +53,7 @@ public class CategoryBreakdownConverter implements AttributeConverter<List<Categ
                             entry.categoryId(),
                             entry.categoryName(),
                             entry.categoryColor(),
+                            entry.categoryIcon(),
                             decrypt(entry.amountEncrypted()),
                             entry.transactionCount() == null ? 0L : entry.transactionCount()
                     ))
@@ -72,6 +74,7 @@ public class CategoryBreakdownConverter implements AttributeConverter<List<Categ
     private record PersistedEntry(Long categoryId,
                                   String categoryName,
                                   String categoryColor,
+                                  String categoryIcon,
                                   String amountEncrypted,
                                   Long transactionCount) {
     }

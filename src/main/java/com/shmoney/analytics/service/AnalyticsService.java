@@ -161,6 +161,7 @@ public class AnalyticsService {
                             entry.categoryId(),
                             entry.categoryName(),
                             entry.categoryColor(),
+                            entry.categoryIcon(),
                             convert(entry.amount(), current, target),
                             entry.transactionCount()
                     ))
@@ -242,7 +243,12 @@ public class AnalyticsService {
                 }
                 CategoryAccumulator accumulator = categoryTotals.computeIfAbsent(
                         category.getId(),
-                        id -> new CategoryAccumulator(category.getId(), category.getName(), category.getColor())
+                        id -> new CategoryAccumulator(
+                                category.getId(),
+                                category.getName(),
+                                category.getColor(),
+                                category.getIcon()
+                        )
                 );
                 accumulator.add(amount);
                 expenseCount++;
@@ -302,6 +308,7 @@ public class AnalyticsService {
                             entry.categoryId(),
                             entry.categoryName(),
                             entry.categoryColor(),
+                            entry.categoryIcon(),
                             entry.amount(),
                             percent,
                             entry.transactionCount()
@@ -377,13 +384,15 @@ public class AnalyticsService {
         private final Long categoryId;
         private final String name;
         private final String color;
+        private final String icon;
         private BigDecimal amount = BigDecimal.ZERO.setScale(AMOUNT_SCALE, RoundingMode.HALF_UP);
         private long count = 0L;
 
-        private CategoryAccumulator(Long categoryId, String name, String color) {
+        private CategoryAccumulator(Long categoryId, String name, String color, String icon) {
             this.categoryId = categoryId;
             this.name = name;
             this.color = color;
+            this.icon = icon;
         }
 
         void add(BigDecimal value) {
@@ -395,7 +404,7 @@ public class AnalyticsService {
         }
 
         CategoryBreakdown toBreakdown() {
-            return new CategoryBreakdown(categoryId, name, color, amount, count);
+            return new CategoryBreakdown(categoryId, name, color, icon, amount, count);
         }
     }
 }

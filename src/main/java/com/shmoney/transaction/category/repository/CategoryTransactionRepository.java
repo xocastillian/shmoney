@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Optional;
+import java.util.List;
 
 public interface CategoryTransactionRepository extends JpaRepository<CategoryTransaction, Long>,
         JpaSpecificationExecutor<CategoryTransaction> {
@@ -27,4 +28,9 @@ public interface CategoryTransactionRepository extends JpaRepository<CategoryTra
             "WHERE ct.occurredAt BETWEEN :from AND :to")
     java.util.List<Long> findDistinctUserIdsByOccurredAtBetween(@Param("from") OffsetDateTime from,
                                                                 @Param("to") OffsetDateTime to);
+
+    @Query("SELECT DISTINCT ct.occurredAt FROM CategoryTransaction ct " +
+            "WHERE ct.category.id = :categoryId AND ct.user.id = :userId")
+    List<OffsetDateTime> findDistinctOccurredAtByCategoryIdAndUserId(@Param("categoryId") Long categoryId,
+                                                                     @Param("userId") Long userId);
 }

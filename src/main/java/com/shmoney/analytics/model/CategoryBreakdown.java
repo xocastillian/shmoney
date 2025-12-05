@@ -6,6 +6,7 @@ public record CategoryBreakdown(
         Long categoryId,
         String categoryName,
         String categoryColor,
+        String categoryIcon,
         BigDecimal amount,
         long transactionCount
 ) {
