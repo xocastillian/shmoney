@@ -1,5 +1,6 @@
 package com.shmoney.wallet.dto;
 
+import com.shmoney.wallet.entity.DebetOrCredit;
 import com.shmoney.wallet.entity.WalletType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -15,6 +16,7 @@ public record WalletCreateRequest(
         @NotNull @DecimalMin(value = "0", inclusive = true) BigDecimal balance,
         @NotBlank @Pattern(regexp = "^#[0-9A-Fa-f]{6}$") String color,
         @NotNull WalletType type,
+        @NotNull DebetOrCredit debetOrCredit,
         @Positive Long ownerId
 ) {
 }

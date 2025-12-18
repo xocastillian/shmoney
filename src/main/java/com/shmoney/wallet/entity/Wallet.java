@@ -50,6 +50,10 @@ public class Wallet {
     private WalletType type;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "debet_or_credit", nullable = false, length = 10)
+    private DebetOrCredit debetOrCredit;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private WalletStatus status;
 
@@ -74,6 +78,9 @@ public class Wallet {
         if (status == null) {
             status = WalletStatus.ACTIVE;
         }
+        if (debetOrCredit == null) {
+            debetOrCredit = DebetOrCredit.DEBET;
+        }
     }
 
     @PreUpdate
@@ -90,6 +97,9 @@ public class Wallet {
         }
         if (status == null) {
             status = WalletStatus.ACTIVE;
+        }
+        if (debetOrCredit == null) {
+            debetOrCredit = DebetOrCredit.DEBET;
         }
     }
     
@@ -155,6 +165,14 @@ public class Wallet {
 
     public void setStatus(WalletStatus status) {
         this.status = status;
+    }
+
+    public DebetOrCredit getDebetOrCredit() {
+        return debetOrCredit;
+    }
+
+    public void setDebetOrCredit(DebetOrCredit debetOrCredit) {
+        this.debetOrCredit = debetOrCredit;
     }
 
     public OffsetDateTime getCreatedAt() {

@@ -25,5 +25,6 @@ public interface WalletMapper {
     @Mapping(target = "balance", source = "balance")
     @Mapping(target = "color", source = "color")
     @Mapping(target = "status", source = "status")
+    @Mapping(target = "debetOrCredit", source = "debetOrCredit")
     WalletResponse toResponse(Wallet wallet);
 }
