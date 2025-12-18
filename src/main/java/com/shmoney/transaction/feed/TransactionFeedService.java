@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -18,8 +19,8 @@ public class TransactionFeedService {
     
     public PageResponse<TransactionFeedItem> getFeed(Long userId,
                                                      TransactionFeedType type,
-                                                     Long walletId,
-                                                     Long categoryId,
+                                                     List<Long> walletIds,
+                                                     List<Long> categoryIds,
                                                      OffsetDateTime from,
                                                      OffsetDateTime to,
                                                      TransactionFeedPeriod period,
@@ -34,7 +35,7 @@ public class TransactionFeedService {
             toDate = range.to();
         }
         
-        TransactionFeedRepository.PagedFeedResult result = repository.fetch(userId, type, walletId, categoryId,
+        TransactionFeedRepository.PagedFeedResult result = repository.fetch(userId, type, walletIds, categoryIds,
                 fromDate, toDate, page, size);
         return PageResponse.of(result.totalCount(), result.page(), result.size(), result.items());
     }
