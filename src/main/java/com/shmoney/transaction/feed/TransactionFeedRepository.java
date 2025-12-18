@@ -26,13 +26,11 @@ public class TransactionFeedRepository {
                 ) OR (
                     :type IN ('EXPENSE','INCOME') AND entry_source = 'CATEGORY' AND category_transaction_type = :type
                 ))
-              AND ((:walletId)::BIGINT IS NULL OR (:walletId)::BIGINT = ANY(wallet_ids))
-              AND ((:categoryId)::BIGINT IS NULL OR (entry_source = 'CATEGORY' AND category_id = (:categoryId)::BIGINT))
               AND ((:fromDate)::TIMESTAMPTZ IS NULL OR occurred_at >= (:fromDate)::TIMESTAMPTZ)
               AND ((:toDate)::TIMESTAMPTZ IS NULL OR occurred_at <= (:toDate)::TIMESTAMPTZ)
             """;
 
-    private static final String ROW_SQL = """
+    private static final String ROW_SQL_PREFIX = """
             SELECT entry_id,
                    entry_source,
                    category_transaction_type,
@@ -44,12 +42,14 @@ public class TransactionFeedRepository {
                    description,
                    occurred_at,
                    created_at
-            """ + BASE_FILTER + """
+            """ + BASE_FILTER;
+
+    private static final String COUNT_SQL_PREFIX = "SELECT COUNT(*) " + BASE_FILTER;
+
+    private static final String ORDER_LIMIT = """
             ORDER BY occurred_at DESC, entry_id DESC
             OFFSET :offset LIMIT :limit
             """;
-
-    private static final String COUNT_SQL = "SELECT COUNT(*) " + BASE_FILTER;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
 
@@ -59,8 +59,8 @@ public class TransactionFeedRepository {
 
     public PagedFeedResult fetch(Long userId,
                                  TransactionFeedType type,
-                                 Long walletId,
-                                 Long categoryId,
+                                 List<Long> walletIds,
+                                 List<Long> categoryIds,
                                  OffsetDateTime from,
                                  OffsetDateTime to,
                                  int page,
@@ -69,29 +69,58 @@ public class TransactionFeedRepository {
         int currentPage = Math.max(page, 0);
         int offset = currentPage * limit;
 
-        MapSqlParameterSource params = buildParams(userId, type, walletId, categoryId, from, to)
+        MapSqlParameterSource params = buildParams(userId, type, from, to)
                 .addValue("offset", offset)
                 .addValue("limit", limit);
 
-        Long total = jdbcTemplate.queryForObject(COUNT_SQL, params, Long.class);
+        addOptionalFilterValues(params, "walletIds", walletIds);
+        addOptionalFilterValues(params, "categoryIds", categoryIds);
+
+        String filters = buildAdditionalFilters(walletIds, categoryIds);
+        String rowSql = ROW_SQL_PREFIX + filters + ORDER_LIMIT;
+        String countSql = COUNT_SQL_PREFIX + filters;
+
+        Long total = jdbcTemplate.queryForObject(countSql, params, Long.class);
         long totalCount = total == null ? 0 : total;
-        List<TransactionFeedItem> items = jdbcTemplate.query(ROW_SQL, params, new TransactionFeedRowMapper());
+        List<TransactionFeedItem> items = jdbcTemplate.query(rowSql, params, new TransactionFeedRowMapper());
         return new PagedFeedResult(totalCount, currentPage, limit, items);
     }
 
     private MapSqlParameterSource buildParams(Long userId,
                                               TransactionFeedType type,
-                                              Long walletId,
-                                              Long categoryId,
                                               OffsetDateTime from,
                                               OffsetDateTime to) {
         return new MapSqlParameterSource()
                 .addValue("userId", userId, Types.BIGINT)
                 .addValue("type", type == null ? "ALL" : type.name(), Types.VARCHAR)
-                .addValue("walletId", walletId, Types.BIGINT)
-                .addValue("categoryId", categoryId, Types.BIGINT)
                 .addValue("fromDate", toTimestamp(from), Types.TIMESTAMP)
                 .addValue("toDate", toTimestamp(to), Types.TIMESTAMP);
+    }
+
+    private void addOptionalFilterValues(MapSqlParameterSource params, String name, List<Long> values) {
+        if (values != null && !values.isEmpty()) {
+            params.addValue(name, values);
+        }
+    }
+
+    private String buildAdditionalFilters(List<Long> walletIds, List<Long> categoryIds) {
+        StringBuilder builder = new StringBuilder();
+        if (walletIds != null && !walletIds.isEmpty()) {
+            builder.append("""
+                    AND EXISTS (
+                        SELECT 1
+                        FROM unnest(wallet_ids) AS wallet_filter(wallet_id)
+                        WHERE wallet_id IN (:walletIds)
+                    )
+                    """);
+        }
+        if (categoryIds != null && !categoryIds.isEmpty()) {
+            builder.append("""
+                    AND entry_source = 'CATEGORY'
+                    AND category_id IN (:categoryIds)
+                    """);
+        }
+        return builder.toString();
     }
 
     private Timestamp toTimestamp(OffsetDateTime dateTime) {
