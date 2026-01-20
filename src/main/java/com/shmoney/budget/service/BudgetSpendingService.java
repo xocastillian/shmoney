@@ -67,11 +67,15 @@ public class BudgetSpendingService {
                 );
         BigDecimal total = BigDecimal.ZERO;
         for (CategoryTransaction tx : transactions) {
-            if (tx.getType() != CategoryTransactionType.EXPENSE) {
-                continue;
-            }
             BigDecimal amount = convert(tx.getAmount(), tx.getCurrency().getCode(), budget.getCurrencyCode());
-            total = total.add(amount);
+            if (tx.getType() == CategoryTransactionType.EXPENSE) {
+                total = total.add(amount);
+            } else if (tx.getType() == CategoryTransactionType.INCOME) {
+                total = total.subtract(amount);
+            }
+        }
+        if (total.compareTo(BigDecimal.ZERO) < 0) {
+            total = BigDecimal.ZERO;
         }
         budget.setSpentAmount(total);
         budget.setPercentSpent(calculatePercent(total, budget.getAmountLimit()));
@@ -79,7 +83,7 @@ public class BudgetSpendingService {
     }
 
     private void applyDelta(TransactionSnapshot snapshot, boolean addition) {
-        if (snapshot == null || snapshot.type() != CategoryTransactionType.EXPENSE) {
+        if (snapshot == null) {
             return;
         }
         List<Budget> budgets = budgetRepository.findActiveBudgetsForCategory(
@@ -92,9 +96,10 @@ public class BudgetSpendingService {
         }
         for (Budget budget : budgets) {
             BigDecimal converted = convert(snapshot.amount(), snapshot.currencyCode(), budget.getCurrencyCode());
-            BigDecimal newSpent = addition
-                    ? budget.getSpentAmount().add(converted)
-                    : budget.getSpentAmount().subtract(converted);
+            int typeMultiplier = snapshot.type() == CategoryTransactionType.INCOME ? -1 : 1;
+            int changeMultiplier = addition ? 1 : -1;
+            BigDecimal delta = converted.multiply(BigDecimal.valueOf(typeMultiplier * changeMultiplier));
+            BigDecimal newSpent = budget.getSpentAmount().add(delta);
             if (newSpent.compareTo(BigDecimal.ZERO) < 0) {
                 newSpent = BigDecimal.ZERO;
             }
