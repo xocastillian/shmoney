@@ -1,6 +1,7 @@
 package com.shmoney.transaction.feed;
 
 import com.shmoney.common.dto.PageResponse;
+import com.shmoney.debt.entity.DebtTransactionDirection;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,8 @@ public class TransactionFeedService {
                                                      TransactionFeedType type,
                                                      List<Long> walletIds,
                                                      List<Long> categoryIds,
+                                                     List<Long> debtCounterpartyIds,
+                                                     DebtTransactionDirection debtDirection,
                                                      OffsetDateTime from,
                                                      OffsetDateTime to,
                                                      TransactionFeedPeriod period,
@@ -36,7 +39,7 @@ public class TransactionFeedService {
         }
         
         TransactionFeedRepository.PagedFeedResult result = repository.fetch(userId, type, walletIds, categoryIds,
-                fromDate, toDate, page, size);
+                debtCounterpartyIds, debtDirection, fromDate, toDate, page, size);
         return PageResponse.of(result.totalCount(), result.page(), result.size(), result.items());
     }
 }

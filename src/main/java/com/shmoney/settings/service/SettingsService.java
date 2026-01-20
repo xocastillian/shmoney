@@ -3,6 +3,7 @@ package com.shmoney.settings.service;
 import com.shmoney.analytics.service.AnalyticsService;
 import com.shmoney.currency.entity.Currency;
 import com.shmoney.currency.service.CurrencyService;
+import com.shmoney.debt.service.DebtCounterpartyService;
 import com.shmoney.settings.ApplicationLanguage;
 import com.shmoney.settings.dto.AppSettingsResponse;
 import com.shmoney.settings.dto.UpdateAppSettingsRequest;
@@ -34,15 +35,18 @@ public class SettingsService {
     private final CurrencyService currencyService;
     private final AppSettingsProvider appSettingsProvider;
     private final AnalyticsService analyticsService;
+    private final DebtCounterpartyService debtCounterpartyService;
 
     public SettingsService(AppSettingsRepository appSettingsRepository,
                            CurrencyService currencyService,
                            AppSettingsProvider appSettingsProvider,
-                           AnalyticsService analyticsService) {
+                           AnalyticsService analyticsService,
+                           DebtCounterpartyService debtCounterpartyService) {
         this.appSettingsRepository = appSettingsRepository;
         this.currencyService = currencyService;
         this.appSettingsProvider = appSettingsProvider;
         this.analyticsService = analyticsService;
+        this.debtCounterpartyService = debtCounterpartyService;
     }
 
     public AppSettingsResponse getSettings() {
@@ -74,6 +78,7 @@ public class SettingsService {
         appSettingsRepository.save(settings);
         if (previousCurrency != null && !previousCurrency.equalsIgnoreCase(newCurrency)) {
             analyticsService.recalculateAllSummaries(newCurrency);
+            debtCounterpartyService.recalculateForNewCurrency(newCurrency);
         }
         return buildResponse(settings);
     }

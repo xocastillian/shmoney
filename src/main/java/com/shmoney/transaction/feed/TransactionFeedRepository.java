@@ -1,6 +1,7 @@
 package com.shmoney.transaction.feed;
 
 import com.shmoney.common.crypto.EncryptedBigDecimalConverter;
+import com.shmoney.debt.entity.DebtTransactionDirection;
 import com.shmoney.transaction.category.entity.CategoryTransactionType;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -25,6 +26,8 @@ public class TransactionFeedRepository {
                     :type = 'TRANSFER' AND entry_source = 'TRANSFER'
                 ) OR (
                     :type IN ('EXPENSE','INCOME') AND entry_source = 'CATEGORY' AND category_transaction_type = :type
+                ) OR (
+                    :type = 'DEBT' AND entry_source = 'DEBT'
                 ))
               AND ((:fromDate)::TIMESTAMPTZ IS NULL OR occurred_at >= (:fromDate)::TIMESTAMPTZ)
               AND ((:toDate)::TIMESTAMPTZ IS NULL OR occurred_at <= (:toDate)::TIMESTAMPTZ)
@@ -37,6 +40,8 @@ public class TransactionFeedRepository {
                    wallet_id,
                    counterparty_wallet_id,
                    category_id,
+                   debt_counterparty_id,
+                   debt_direction,
                    amount,
                    currency_code,
                    description,
@@ -61,6 +66,8 @@ public class TransactionFeedRepository {
                                  TransactionFeedType type,
                                  List<Long> walletIds,
                                  List<Long> categoryIds,
+                                 List<Long> debtCounterpartyIds,
+                                 DebtTransactionDirection debtDirection,
                                  OffsetDateTime from,
                                  OffsetDateTime to,
                                  int page,
@@ -69,14 +76,15 @@ public class TransactionFeedRepository {
         int currentPage = Math.max(page, 0);
         int offset = currentPage * limit;
 
-        MapSqlParameterSource params = buildParams(userId, type, from, to)
+        MapSqlParameterSource params = buildParams(userId, type, debtDirection, from, to)
                 .addValue("offset", offset)
                 .addValue("limit", limit);
 
         addOptionalFilterValues(params, "walletIds", walletIds);
         addOptionalFilterValues(params, "categoryIds", categoryIds);
+        addOptionalFilterValues(params, "debtCounterpartyIds", debtCounterpartyIds);
 
-        String filters = buildAdditionalFilters(walletIds, categoryIds);
+        String filters = buildAdditionalFilters(walletIds, categoryIds, debtCounterpartyIds, debtDirection);
         String rowSql = ROW_SQL_PREFIX + filters + ORDER_LIMIT;
         String countSql = COUNT_SQL_PREFIX + filters;
 
@@ -88,11 +96,13 @@ public class TransactionFeedRepository {
 
     private MapSqlParameterSource buildParams(Long userId,
                                               TransactionFeedType type,
+                                              DebtTransactionDirection debtDirection,
                                               OffsetDateTime from,
                                               OffsetDateTime to) {
         return new MapSqlParameterSource()
                 .addValue("userId", userId, Types.BIGINT)
                 .addValue("type", type == null ? "ALL" : type.name(), Types.VARCHAR)
+                .addValue("debtDirection", debtDirection == null ? null : debtDirection.name(), Types.VARCHAR)
                 .addValue("fromDate", toTimestamp(from), Types.TIMESTAMP)
                 .addValue("toDate", toTimestamp(to), Types.TIMESTAMP);
     }
@@ -103,7 +113,10 @@ public class TransactionFeedRepository {
         }
     }
 
-    private String buildAdditionalFilters(List<Long> walletIds, List<Long> categoryIds) {
+    private String buildAdditionalFilters(List<Long> walletIds,
+                                          List<Long> categoryIds,
+                                          List<Long> debtCounterpartyIds,
+                                          DebtTransactionDirection debtDirection) {
         StringBuilder builder = new StringBuilder();
         if (walletIds != null && !walletIds.isEmpty()) {
             builder.append("""
@@ -118,6 +131,18 @@ public class TransactionFeedRepository {
             builder.append("""
                     AND entry_source = 'CATEGORY'
                     AND category_id IN (:categoryIds)
+                    """);
+        }
+        if (debtCounterpartyIds != null && !debtCounterpartyIds.isEmpty()) {
+            builder.append("""
+                    AND entry_source = 'DEBT'
+                    AND debt_counterparty_id IN (:debtCounterpartyIds)
+                    """);
+        }
+        if (debtDirection != null) {
+            builder.append("""
+                    AND entry_source = 'DEBT'
+                    AND debt_direction = :debtDirection
                     """);
         }
         return builder.toString();
@@ -143,6 +168,8 @@ public class TransactionFeedRepository {
                     rs.getObject("wallet_id", Long.class),
                     rs.getObject("counterparty_wallet_id", Long.class),
                     rs.getObject("category_id", Long.class),
+                    rs.getObject("debt_counterparty_id", Long.class),
+                    rs.getString("debt_direction"),
                     amount,
                     rs.getString("currency_code"),
                     rs.getString("description"),

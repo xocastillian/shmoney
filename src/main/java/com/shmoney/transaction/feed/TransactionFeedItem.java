@@ -12,6 +12,8 @@ public record TransactionFeedItem(
         Long walletId,
         Long counterpartyWalletId,
         Long categoryId,
+        Long debtCounterpartyId,
+        String debtDirection,
         BigDecimal amount,
         String currencyCode,
         String description,
