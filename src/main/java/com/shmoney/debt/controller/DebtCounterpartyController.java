@@ -6,9 +6,11 @@ import com.shmoney.debt.dto.DebtCounterpartyCreateRequest;
 import com.shmoney.debt.dto.DebtCounterpartyMapper;
 import com.shmoney.debt.dto.DebtCounterpartyResponse;
 import com.shmoney.debt.dto.DebtCounterpartyUpdateRequest;
+import com.shmoney.debt.dto.DebtForgiveRequest;
 import com.shmoney.debt.entity.DebtCounterparty;
 import com.shmoney.debt.entity.DebtCounterpartyStatus;
 import com.shmoney.debt.service.DebtCounterpartyService;
+import com.shmoney.debt.service.DebtTransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,13 +28,16 @@ import java.util.List;
 public class DebtCounterpartyController {
     
     private final DebtCounterpartyService counterpartyService;
+    private final DebtTransactionService transactionService;
     private final DebtCounterpartyMapper counterpartyMapper;
     private final CurrentUserProvider currentUserProvider;
     
     public DebtCounterpartyController(DebtCounterpartyService counterpartyService,
+                                      DebtTransactionService transactionService,
                                       DebtCounterpartyMapper counterpartyMapper,
                                       CurrentUserProvider currentUserProvider) {
         this.counterpartyService = counterpartyService;
+        this.transactionService = transactionService;
         this.counterpartyMapper = counterpartyMapper;
         this.currentUserProvider = currentUserProvider;
     }
@@ -88,5 +93,14 @@ public class DebtCounterpartyController {
         AuthenticatedUser current = currentUserProvider.requireCurrentUser();
         
         return counterpartyMapper.toResponse(counterpartyService.restore(current.id(), id));
+    }
+
+    @Operation(summary = "Простить долг контрагенту")
+    @PostMapping("/{id}/forgive")
+    public DebtCounterpartyResponse forgive(@PathVariable Long id,
+                                            @Valid @RequestBody DebtForgiveRequest request) {
+        AuthenticatedUser current = currentUserProvider.requireCurrentUser();
+        transactionService.forgive(current, id, request);
+        return counterpartyMapper.toResponse(counterpartyService.getOwned(current.id(), id));
     }
 }

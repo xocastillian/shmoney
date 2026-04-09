@@ -2,12 +2,14 @@ package com.shmoney.debt.service;
 
 import com.shmoney.auth.security.AuthenticatedUser;
 import com.shmoney.currency.service.ExchangeRateService;
+import com.shmoney.debt.dto.DebtForgiveRequest;
 import com.shmoney.debt.dto.DebtTransactionCreateRequest;
 import com.shmoney.debt.dto.DebtTransactionFilter;
 import com.shmoney.debt.dto.DebtTransactionUpdateRequest;
 import com.shmoney.debt.entity.DebtCounterparty;
 import com.shmoney.debt.entity.DebtTransaction;
 import com.shmoney.debt.entity.DebtTransactionDirection;
+import com.shmoney.debt.entity.DebtTransactionKind;
 import com.shmoney.debt.exception.DebtCounterpartyNotFoundException;
 import com.shmoney.debt.exception.DebtTransactionNotFoundException;
 import com.shmoney.debt.exception.InvalidDebtTransactionException;
@@ -67,13 +69,14 @@ public class DebtTransactionService {
         transaction.setCounterparty(counterparty);
         transaction.setWallet(wallet);
         transaction.setDirection(request.direction());
+        transaction.setKind(DebtTransactionKind.CASH_FLOW);
         transaction.setAmount(normalizeAmount(request.amount()));
         transaction.setCurrency(wallet.getCurrency());
         transaction.setDescription(request.description());
         transaction.setOccurredAt(request.occurredAt());
         
         DebtTransaction saved = transactionRepository.save(transaction);
-        applyWalletDelta(wallet, saved.getDirection(), saved.getAmount());
+        applyWalletDelta(wallet, saved.getDirection(), saved.getAmount(), saved.getKind());
         updateAggregates(counterparty, saved.getDirection(), saved.getAmount(), wallet.getCurrency().getCode());
 
         return saved;
@@ -112,6 +115,10 @@ public class DebtTransactionService {
                 : counterpartyRepository.findByIdAndUserId(request.counterpartyId(), currentUser.id())
                         .orElseThrow(() -> new DebtCounterpartyNotFoundException(request.counterpartyId()));
 
+        if (targetWallet == null) {
+            throw new InvalidDebtTransactionException("Операции без кошелька нельзя редактировать");
+        }
+
         if (request.currencyId() != null && !targetWallet.getCurrency().getId().equals(request.currencyId())) {
             throw new InvalidDebtTransactionException("Валюта операции должна совпадать с валютой кошелька");
         }
@@ -133,8 +140,8 @@ public class DebtTransactionService {
         }
 
         DebtTransaction saved = transactionRepository.save(existing);
-        revertWalletDelta(originalWallet, originalDirection, originalAmount);
-        applyWalletDelta(targetWallet, saved.getDirection(), saved.getAmount());
+        revertWalletDelta(originalWallet, originalDirection, originalAmount, existing.getKind());
+        applyWalletDelta(targetWallet, saved.getDirection(), saved.getAmount(), saved.getKind());
         recalculateAggregates(originalCounterparty);
         if (!originalCounterparty.getId().equals(targetCounterparty.getId())) {
             recalculateAggregates(targetCounterparty);
@@ -144,7 +151,7 @@ public class DebtTransactionService {
 
     public void delete(AuthenticatedUser currentUser, Long id) {
         DebtTransaction transaction = getOwnedById(currentUser.id(), id);
-        revertWalletDelta(transaction.getWallet(), transaction.getDirection(), transaction.getAmount());
+        revertWalletDelta(transaction.getWallet(), transaction.getDirection(), transaction.getAmount(), transaction.getKind());
         transactionRepository.delete(transaction);
         recalculateAggregates(transaction.getCounterparty());
     }
@@ -168,7 +175,42 @@ public class DebtTransactionService {
         return wallet;
     }
 
-    private void applyWalletDelta(Wallet wallet, DebtTransactionDirection direction, BigDecimal amount) {
+    public DebtTransaction forgive(AuthenticatedUser currentUser, Long counterpartyId, DebtForgiveRequest request) {
+        DebtCounterparty counterparty = counterpartyRepository
+                .findByIdAndUserId(counterpartyId, currentUser.id())
+                .orElseThrow(() -> new DebtCounterpartyNotFoundException(counterpartyId));
+
+        BigDecimal owedToMe = valueOrZero(counterparty.getOwedToMe());
+        BigDecimal iOwe = valueOrZero(counterparty.getIOwe());
+        if (owedToMe.compareTo(BigDecimal.ZERO) == 0 && iOwe.compareTo(BigDecimal.ZERO) == 0) {
+            throw new InvalidDebtTransactionException("У контрагента нет долга для прощения");
+        }
+
+        DebtTransactionDirection direction = owedToMe.compareTo(BigDecimal.ZERO) > 0
+                ? DebtTransactionDirection.BORROWED
+                : DebtTransactionDirection.LENT;
+        BigDecimal amount = owedToMe.compareTo(BigDecimal.ZERO) > 0 ? owedToMe : iOwe;
+
+        DebtTransaction transaction = new DebtTransaction();
+        transaction.setUser(counterparty.getUser());
+        transaction.setCounterparty(counterparty);
+        transaction.setWallet(null);
+        transaction.setDirection(direction);
+        transaction.setKind(DebtTransactionKind.FORGIVEN);
+        transaction.setAmount(amount);
+        transaction.setCurrency(counterparty.getCurrency());
+        transaction.setDescription(request.description());
+        transaction.setOccurredAt(request.occurredAt());
+
+        DebtTransaction saved = transactionRepository.save(transaction);
+        updateAggregates(counterparty, saved.getDirection(), saved.getAmount(), saved.getCurrency().getCode());
+        return saved;
+    }
+
+    private void applyWalletDelta(Wallet wallet, DebtTransactionDirection direction, BigDecimal amount, DebtTransactionKind kind) {
+        if (kind != DebtTransactionKind.CASH_FLOW) {
+            return;
+        }
         BigDecimal delta = amount;
         if (direction == DebtTransactionDirection.LENT) {
             delta = delta.negate();
@@ -176,12 +218,18 @@ public class DebtTransactionService {
         updateWalletBalance(wallet, delta);
     }
 
-    private void revertWalletDelta(Wallet wallet, DebtTransactionDirection direction, BigDecimal amount) {
+    private void revertWalletDelta(Wallet wallet, DebtTransactionDirection direction, BigDecimal amount, DebtTransactionKind kind) {
+        if (kind != DebtTransactionKind.CASH_FLOW) {
+            return;
+        }
         BigDecimal delta = direction == DebtTransactionDirection.LENT ? amount : amount.negate();
         updateWalletBalance(wallet, delta);
     }
 
     private void updateWalletBalance(Wallet wallet, BigDecimal delta) {
+        if (wallet == null) {
+            return;
+        }
         BigDecimal currentBalance = wallet.getBalance() == null
                 ? BigDecimal.ZERO
                 : wallet.getBalance();
@@ -265,12 +313,6 @@ public class DebtTransactionService {
         }
         
         return value.setScale(2, RoundingMode.HALF_UP);
-    }
-    
-    private void ensureNonNegative(BigDecimal value, String message) {
-        if (value.compareTo(BigDecimal.ZERO) < 0) {
-            throw new InvalidDebtTransactionException(message);
-        }
     }
     
     private BigDecimal valueOrZero(BigDecimal value) {
