@@ -1,0 +1,5 @@
+ALTER TABLE debt_transactions
+    ADD COLUMN IF NOT EXISTS kind VARCHAR(16) NOT NULL DEFAULT 'CASH_FLOW';
+
+ALTER TABLE debt_transactions
+    ALTER COLUMN wallet_id DROP NOT NULL;

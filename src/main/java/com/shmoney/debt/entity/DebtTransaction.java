@@ -28,13 +28,17 @@ public class DebtTransaction {
     @JoinColumn(name = "counterparty_id", nullable = false)
     private DebtCounterparty counterparty;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "wallet_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "wallet_id")
     private Wallet wallet;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
     private DebtTransactionDirection direction;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "kind", nullable = false, length = 16)
+    private DebtTransactionKind kind;
 
     @Convert(converter = EncryptedBigDecimalConverter.class)
     @Column(nullable = false)
@@ -57,6 +61,9 @@ public class DebtTransaction {
     void onCreate() {
         if (createdAt == null) {
             createdAt = OffsetDateTime.now();
+        }
+        if (kind == null) {
+            kind = DebtTransactionKind.CASH_FLOW;
         }
         normalizeAmount();
     }
@@ -101,6 +108,14 @@ public class DebtTransaction {
 
     public void setDirection(DebtTransactionDirection direction) {
         this.direction = direction;
+    }
+
+    public DebtTransactionKind getKind() {
+        return kind;
+    }
+
+    public void setKind(DebtTransactionKind kind) {
+        this.kind = kind;
     }
 
     public BigDecimal getAmount() {
