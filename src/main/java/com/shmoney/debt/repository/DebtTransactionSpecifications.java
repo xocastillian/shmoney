@@ -2,6 +2,7 @@ package com.shmoney.debt.repository;
 
 import com.shmoney.debt.entity.DebtTransaction;
 import com.shmoney.debt.entity.DebtTransactionDirection;
+import com.shmoney.debt.entity.DebtTransactionKind;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.OffsetDateTime;
@@ -37,4 +38,11 @@ public final class DebtTransactionSpecifications {
         
         return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("occurredAt"), to);
     }
+
+    public static Specification<DebtTransaction> hasKind(DebtTransactionKind kind) {
+        if (kind == null) return null;
+
+        return (root, query, cb) -> cb.equal(root.get("kind"), kind);
+    }
 }
+

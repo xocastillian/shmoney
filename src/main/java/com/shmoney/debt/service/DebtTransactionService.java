@@ -86,6 +86,7 @@ public class DebtTransactionService {
     public Page<DebtTransaction> getPage(Long userId, DebtTransactionFilter filter, Pageable pageable) {
         Specification<DebtTransaction> specification = Specification
                 .where(DebtTransactionSpecifications.belongsToUser(userId))
+                .and(DebtTransactionSpecifications.hasKind(DebtTransactionKind.CASH_FLOW))
                 .and(DebtTransactionSpecifications.hasCounterparty(filter.counterpartyId()))
                 .and(DebtTransactionSpecifications.hasDirection(filter.direction()))
                 .and(DebtTransactionSpecifications.occurredAfter(filter.from()))
